@@ -4,11 +4,11 @@ public class Token extends BoardPiece {
 	// Enumeration
 	public enum TokenId{
 		MISS_SCARLET(0),
-		COL_MUSTARD(1),
+		COLONEL_MUSTARD(1),
 		MRS_WHITE(2),
 		MR_GREEN(3),
 		MRS_PEACOCK(4),
-		PROF_PLUM(5);
+		PROFESSOR_PLUM(5);
 		
 		private final int id;
 		TokenId(int id){

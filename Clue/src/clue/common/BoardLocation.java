@@ -54,8 +54,12 @@ public abstract class BoardLocation {
 	}
 
 	// Data structure modifiers
-	// ADD OCCUPANT
-	// DELETE OCCUPANT
+	public boolean addOccupant(BoardPiece boardPiece) {
+		return occupants.add(boardPiece);
+	}
+    public boolean removeOccupant(BoardPiece boardPiece) {
+    	return occupants.remove(boardPiece);
+    }
     public void addNeighbor(BoardLocation boardLocation) {
     	this.neighbors.add(boardLocation);
     }
