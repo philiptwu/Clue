@@ -3,8 +3,8 @@ package clue.common;
 public class Hallway extends BoardLocation {
 	
 	// Constructor
-	public Hallway(int locationX, int locationY) {
-		// Parent constructor
-		super("Hallway",locationX,locationY);				
+	public Hallway(String displayName) {
+		// Parent constructor, hallways can hold at most one person
+		super(displayName,1);				
 	}	
 }

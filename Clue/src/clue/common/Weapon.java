@@ -23,9 +23,9 @@ public class Weapon extends BoardPiece {
 	protected WeaponId weaponId;
 	
 	// Constructor
-	public Weapon(WeaponId weaponId, String displayName, int locationX, int locationY) {
+	public Weapon(WeaponId weaponId, String displayName) {
 		// Parent constructor
-		super(displayName,locationX,locationY);
+		super(displayName);
 				
 		// Set member variables
 		this.weaponId = weaponId;

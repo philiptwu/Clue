@@ -26,9 +26,9 @@ public class Token extends BoardPiece {
 	protected int previousY;
 	
 	// Constructor
-	public Token(TokenId tokenId, String displayName, int locationX, int locationY) {
+	public Token(TokenId tokenId, String displayName) {
 		// Parent constructor
-		super(displayName,locationX,locationY);
+		super(displayName);
 				
 		// Set member variables
 		this.tokenId = tokenId;

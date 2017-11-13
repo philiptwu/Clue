@@ -8,15 +8,17 @@ public abstract class BoardLocation {
 	protected String displayName;
 	protected int locationX;
 	protected int locationY;
+	protected int capacity;
 	protected Set<BoardPiece> occupants;
 	protected Set<BoardLocation> neighbors;
 	
 	// Constructor
-	public BoardLocation(String diplayName, int locationX, int locationY) {
+	public BoardLocation(String displayName,int capacity) {
 		// Initialize member variables
 		setDisplayName(displayName);
-		setLocationX(locationX);
-		setLocationY(locationY);
+		setLocationX(-1);
+		setLocationY(-1);
+		setCapacity(capacity);
 		
 		// Initialize data structures
 		occupants = new HashSet<BoardPiece>();
@@ -32,6 +34,9 @@ public abstract class BoardLocation {
 	}
 	public int getLocationY() {
 		return locationY;
+	}
+	public int getCapacity() {
+		return capacity;
 	}
 	public Set<BoardPiece> getOccupants(){
 		// Shallow copy
@@ -52,10 +57,25 @@ public abstract class BoardLocation {
 	public void setLocationY(int locationY) {
 		this.locationY = locationY;
 	}
+	public void setCapacity(int capacity) {
+		this.capacity = capacity;
+	}
 
 	// Data structure modifiers
 	public boolean addOccupant(BoardPiece boardPiece) {
-		return occupants.add(boardPiece);
+		if(occupants.size() > capacity) {
+			// Already full
+			return false;
+		}else {
+			// Try adding the board piece
+			boolean addSuccess = occupants.add(boardPiece);
+			if(addSuccess) {
+				// Update the board piece's location
+				boardPiece.setLocationX(this.locationX);
+				boardPiece.setLocationY(this.locationY);
+			}
+			return addSuccess;
+		}
 	}
     public boolean removeOccupant(BoardPiece boardPiece) {
     	return occupants.remove(boardPiece);

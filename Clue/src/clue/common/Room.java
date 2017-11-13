@@ -26,9 +26,9 @@ public class Room extends BoardLocation {
 	protected RoomId roomId;
 	
 	// Constructor
-	public Room(RoomId roomId, String displayName, int locationX, int locationY) {
-		// Parent constructor
-		super(displayName,locationX,locationY);
+	public Room(RoomId roomId, String displayName) {
+		// Parent constructor, effectively no limit to room capacity
+		super(displayName,Integer.MAX_VALUE);
 				
 		// Set member variables
 		this.roomId = roomId;
