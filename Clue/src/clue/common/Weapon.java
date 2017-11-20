@@ -3,19 +3,24 @@ package clue.common;
 public class Weapon extends BoardPiece {
 	// Enumeration
 	public enum WeaponId{
-		CANDLESTICK(0),
-		KNIFE(1),
-		LEAD_PIPE(2),
-		REVOLVER(3),
-		ROPE(4),
-		WRENCH(5);
+		CANDLESTICK(0,"Candlestick"),
+		KNIFE(1,"Knife"),
+		LEAD_PIPE(2,"Lead Pipe"),
+		REVOLVER(3,"Revolver"),
+		ROPE(4,"Rope"),
+		WRENCH(5,"Wrench");
 		
 		private final int id;
-		WeaponId(int id){
+		private final String defaultName;
+		WeaponId(int id, String defaultName){
 			this.id = id;
+			this.defaultName = defaultName;
 		}
 		public int getValue() {
 			return id;
+		}
+		public String getDefaultName() {
+			return defaultName;
 		}
 	}
 	
@@ -23,9 +28,9 @@ public class Weapon extends BoardPiece {
 	protected WeaponId weaponId;
 	
 	// Constructor
-	public Weapon(WeaponId weaponId, String displayName) {
+	public Weapon(WeaponId weaponId) {
 		// Parent constructor
-		super(displayName);
+		super(weaponId.getDefaultName());
 				
 		// Set member variables
 		this.weaponId = weaponId;

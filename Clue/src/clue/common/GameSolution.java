@@ -6,25 +6,25 @@ import clue.common.Weapon.WeaponId;
 
 public class GameSolution {
 	// Member variables
+	RoomId roomId;
 	TokenId tokenId;
 	WeaponId weaponId;
-	RoomId roomId;
 	
 	// Constructor
-	public GameSolution(TokenId tokenId, WeaponId weaponId, RoomId roomId) {
+	public GameSolution(RoomId roomId, TokenId tokenId, WeaponId weaponId) {
+		this.roomId = roomId;
 		this.tokenId = tokenId;
 		this.weaponId = weaponId;
-		this.roomId = roomId;
 	}
 	
 	// Get methods
+	public RoomId getRoomId() {
+		return roomId;
+	}
 	public TokenId getTokenId() {
 		return tokenId;
 	}
 	public WeaponId getWeaponId() {
 		return weaponId;
-	}
-	public RoomId getRoomId() {
-		return roomId;
 	}
 }

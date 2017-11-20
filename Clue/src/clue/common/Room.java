@@ -3,32 +3,37 @@ package clue.common;
 public class Room extends BoardLocation {
 	// Enumeration
 	public enum RoomId{
-		STUDY(0),
-		HALL(1),
-		LOUNGE(2),
-		LIBRARY(3),
-		BILLIARD_ROOM(4),
-		DINING_ROOM(5),
-		CONSERVATORY(6),
-		BALLROOM(7),
-		KITCHEN(8);
+		STUDY(0,"Study"),
+		HALL(1,"Hall"),
+		LOUNGE(2,"Lounge"),
+		LIBRARY(3,"Library"),
+		BILLIARD_ROOM(4,"Billiard Room"),
+		DINING_ROOM(5,"Dining Room"),
+		CONSERVATORY(6,"Conservatory"),
+		BALLROOM(7,"Ballroom"),
+		KITCHEN(8,"Kitchen");
 		
 		private final int id;
-		RoomId(int id){
+		private final String defaultName;
+		RoomId(int id, String defaultName){
 			this.id = id;
+			this.defaultName = defaultName;
 		}
 		public int getValue() {
 			return id;
 		}
+		public String getDefaultName() {
+			return defaultName;
+		}		
 	}
 	
 	// Member variables
 	protected RoomId roomId;
 	
 	// Constructor
-	public Room(RoomId roomId, String displayName) {
+	public Room(RoomId roomId) {
 		// Parent constructor, effectively no limit to room capacity
-		super(displayName,Integer.MAX_VALUE);
+		super(roomId.getDefaultName(),Integer.MAX_VALUE);
 				
 		// Set member variables
 		this.roomId = roomId;

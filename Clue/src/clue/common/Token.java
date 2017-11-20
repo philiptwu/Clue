@@ -3,22 +3,27 @@ package clue.common;
 public class Token extends BoardPiece {
 	// Enumeration
 	public enum TokenId{
-		MISS_SCARLET(0),
-		COLONEL_MUSTARD(1),
-		MRS_WHITE(2),
-		MR_GREEN(3),
-		MRS_PEACOCK(4),
-		PROFESSOR_PLUM(5);
+		MISS_SCARLET(0,"Miss Scarlet"),
+		COLONEL_MUSTARD(1,"Colonel Mustard"),
+		MRS_WHITE(2,"Mrs. White"),
+		MR_GREEN(3,"Mr. Green"),
+		MRS_PEACOCK(4,"Mrs. Peacock"),
+		PROFESSOR_PLUM(5,"Professor Plum");
 		
 		private final int id;
-		TokenId(int id){
+		private final String defaultName;
+		TokenId(int id, String defaultName){
 			this.id = id;
+			this.defaultName = defaultName;
 		}
 		public int getValue() {
 			return id;
 		}
+		public String getDefaultName() {
+			return defaultName;
+		}
 	}
-	
+		
 	// Member variables
 	protected TokenId tokenId;
 	protected boolean previousValid;
@@ -26,9 +31,9 @@ public class Token extends BoardPiece {
 	protected int previousY;
 	
 	// Constructor
-	public Token(TokenId tokenId, String displayName) {
+	public Token(TokenId tokenId) {
 		// Parent constructor
-		super(displayName);
+		super(tokenId.getDefaultName());
 				
 		// Set member variables
 		this.tokenId = tokenId;

@@ -1,11 +1,11 @@
 package clue.common;
 
-public class Card {
+public abstract class Card {
 	// Enumeration
 	public enum CardType{
-		ACTOR(0),
-		WEAPON(1),
-		ROOM(2);
+		ROOM(0),
+		TOKEN(1),
+		WEAPON(2);
 		
 		private final int id;
 		CardType(int id){
@@ -18,19 +18,14 @@ public class Card {
 	
 	// Member variables
 	protected CardType cardType;
-	protected int cardId;
 	
 	// Constructor
-	public Card(CardType cardType, int cardId) {
+	public Card(CardType cardType) {
 		this.cardType = cardType;
-		this.cardId = cardId;
 	}
-	
+		
 	// Get methods
 	public CardType getCardType() {
 		return cardType;
-	}
-	public int getCardId() {
-		return cardId;
 	}
 }
