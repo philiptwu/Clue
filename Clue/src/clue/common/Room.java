@@ -24,7 +24,7 @@ public class Room extends BoardLocation {
 		}
 		public String getDefaultName() {
 			return defaultName;
-		}		
+		}
 	}
 	
 	// Member variables

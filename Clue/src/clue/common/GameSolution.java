@@ -6,9 +6,9 @@ import clue.common.Weapon.WeaponId;
 
 public class GameSolution {
 	// Member variables
-	RoomId roomId;
-	TokenId tokenId;
-	WeaponId weaponId;
+	protected RoomId roomId;
+	protected TokenId tokenId;
+	protected WeaponId weaponId;
 	
 	// Constructor
 	public GameSolution(RoomId roomId, TokenId tokenId, WeaponId weaponId) {
@@ -27,7 +27,14 @@ public class GameSolution {
 	public WeaponId getWeaponId() {
 		return weaponId;
 	}
+
+	// Compare
+	public boolean equals(Object o) {
+		GameSolution g = (GameSolution) o;
+		return roomId.equals(g.roomId) && tokenId.equals(g.tokenId) && weaponId.equals(g.weaponId);
+	}
 	
+	// Debug
 	public String toString() {
 		return roomId.getDefaultName() + ", " + tokenId.getDefaultName() + ", " + weaponId.getDefaultName();
 	}
