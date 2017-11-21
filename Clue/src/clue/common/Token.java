@@ -25,6 +25,7 @@ public class Token extends BoardPiece {
 	}
 		
 	// Member variables
+	protected boolean available;
 	protected TokenId tokenId;
 	protected boolean previousValid;
 	protected int previousX;
@@ -36,6 +37,7 @@ public class Token extends BoardPiece {
 		super(tokenId.getDefaultName());
 				
 		// Set member variables
+		this.available = true;
 		this.tokenId = tokenId;
 		this.previousValid = false;
 		this.previousX = -1;
@@ -55,6 +57,9 @@ public class Token extends BoardPiece {
 	public int getPreviousY() {
 		return previousY;
 	}
+	public boolean getAvailable() {
+		return available;
+	}
 	
 	// Set methods
 	public void setPreviousValid(boolean previousValid) {
@@ -65,5 +70,8 @@ public class Token extends BoardPiece {
 	}
 	public void setPreviousY(int previousY) {
 		this.previousY = previousY;
+	}
+	public void setAvailable(boolean available) {
+		this.available = available;
 	}
 }

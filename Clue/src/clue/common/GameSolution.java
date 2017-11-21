@@ -27,4 +27,8 @@ public class GameSolution {
 	public WeaponId getWeaponId() {
 		return weaponId;
 	}
+	
+	public String toString() {
+		return roomId.getDefaultName() + ", " + tokenId.getDefaultName() + ", " + weaponId.getDefaultName();
+	}
 }

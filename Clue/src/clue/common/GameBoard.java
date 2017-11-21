@@ -1,18 +1,19 @@
 package clue.common;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
 import clue.common.Room.RoomId;
 import clue.common.Token.TokenId;
 import clue.common.Weapon.WeaponId;
 
 public class GameBoard {
 	// Member variables
-	BoardLocation[][] grid;
-	Map<TokenId,Token> tokenMap;
-	Map<RoomId,Room> roomMap;
-	Map<WeaponId,Weapon> weaponMap;
+	protected BoardLocation[][] grid;
+	protected Map<TokenId,Token> tokenMap;
+	protected Map<RoomId,Room> roomMap;
+	protected Map<WeaponId,Weapon> weaponMap;
 	
 	// Constructor to create a blank initialized game board
 	public GameBoard() {
@@ -58,6 +59,11 @@ public class GameBoard {
 		weaponMap.put(revolver.getWeaponId(), revolver);
 		weaponMap.put(rope.getWeaponId(), rope);
 		weaponMap.put(wrench.getWeaponId(), wrench);
+	}
+	
+	// Gets all the tokens
+	public List<Token> getTokens(){
+		return new ArrayList<Token>(tokenMap.values());
 	}
 	
 	// Method to initialize default token locations
@@ -109,7 +115,7 @@ public class GameBoard {
 		// Add hallways
 		for(int i=0; i<5; i++) {
 			for(int j=0; j<5; j++) {
-				if((i % 0 == 0) && (j % 0 != 0) || (i % 0 != 0) && (j % 0 == 0)){
+				if((i % 2 == 0) && (j % 2 != 0) || (i % 2 != 0) && (j % 2 == 0)){
 					addBoardLocationToGrid(i,j,new Hallway());
 				}
 			}

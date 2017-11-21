@@ -19,6 +19,10 @@ public class RoomCard extends Card {
 		return roomId;
 	}
 	
+	public String toString() {
+		return cardType.toString() + " " + roomId.getDefaultName();
+	}
+	
 	public static List<RoomCard> getCards(){
 		List<RoomCard> roomCards = new ArrayList<RoomCard>();
 		for(RoomId roomId : RoomId.values()) {

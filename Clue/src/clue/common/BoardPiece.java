@@ -7,13 +7,13 @@ public abstract class BoardPiece {
 	protected int locationY;
 	
 	// Constructor
-	public BoardPiece(String diplayName) {
+	public BoardPiece(String displayName) {
 		// Initialize member variables
 		setDisplayName(displayName);
 		setLocationX(-1);
 		setLocationY(-1);
 	}
-	
+		
 	// Get methods
 	public String getDisplayName() {
 		return displayName;

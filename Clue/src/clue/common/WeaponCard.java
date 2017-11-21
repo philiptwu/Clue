@@ -19,6 +19,10 @@ public class WeaponCard extends Card {
 		return weaponId;
 	}
 	
+	public String toString() {
+		return cardType.toString() + " " + weaponId.getDefaultName();
+	}
+	
 	public static List<WeaponCard> getCards(){
 		List<WeaponCard> weaponCards = new ArrayList<WeaponCard>();
 		for(WeaponId weaponId : WeaponId.values()) {

@@ -19,6 +19,10 @@ public class TokenCard extends Card {
 		return tokenId;
 	}
 	
+	public String toString() {
+		return cardType.toString() + " " + tokenId.getDefaultName();
+	}
+	
 	public static List<TokenCard> getCards(){
 		List<TokenCard> tokenCards = new ArrayList<TokenCard>();
 		for(TokenId tokenId : TokenId.values()) {

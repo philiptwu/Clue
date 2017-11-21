@@ -1,10 +1,9 @@
 package clue.common;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-
-import clue.common.Token.TokenId;
 
 public class Game {
 	// Member variables
@@ -16,8 +15,8 @@ public class Game {
 	protected GameSolution gameSolution;
 	
 	// Constructor
-	public Game() {		
-		// Create a new game board but don't place tokens or weapons
+	public Game() {				
+		// Create a new game board but don't place tokens or weapons yet
 		gameBoard = new GameBoard();
 		
 		// Create a complete set of cards but don't deal them yet
@@ -29,10 +28,70 @@ public class Game {
 		players = new ArrayList<Player>();
 	}
 	
+	// Gets a player by player name
+	public Player getPlayer(String playerName) {
+		for(Player p : players) {
+			if(p.getPlayerName().equals(playerName)) {
+				return p;
+			}
+		}
+		return null;
+	}
+	
+	// Get the gameboard
+	public GameBoard getGameBoard() {
+		return gameBoard;
+	}
+	
+	// Create and add a new player only if another player with the same name does not already exist in the game
+	public boolean addPlayer(String playerName) {
+		// See if a player of that name already exists in game 
+		if(getPlayer(playerName) != null) {
+			System.err.println("Cannot create a player with name " + playerName + " since one already exists in the game");
+			return false;			
+		}else {
+			// Add if that player does not exist yet
+			Player newPlayer = new Player(playerName);
+			players.add(newPlayer);
+			return true;			
+		}
+	}
+	
+	// Remove a player by name
+	public boolean removePlayer(String playerName) {
+		// Look for player of that name
+		int removeIdx = -1;
+		for(int i=0; i<players.size(); i++) {
+			if(players.get(i).getPlayerName().equals(playerName)) {
+				removeIdx = i;
+				break;
+			}
+		}
+		// Remove if found and return whether or not that name was removed successfully
+		if(removeIdx >= 0) {
+			players.remove(removeIdx);
+			return true;
+		}else {
+			System.err.println("Cannot remove player with name " + playerName + " since no such player exists in the game");
+			return false;
+		}
+	}
+	
+	// Get the set of available tokens to choose from
+	public List<Token> getAvailableTokens(){
+		List<Token> availableTokens = new ArrayList<Token>();
+		for(Token t : gameBoard.getTokens()) {
+			if(t.getAvailable()) {
+				availableTokens.add(t);
+			}
+		}
+		return availableTokens;
+	}
+	
 	// Takes existing room, token, and weapon cards
 	// Removes one from each to create a game solution and then
 	// deals the rest out randomly amongst players
-	public void createSolutionAndDealCards() {		
+	private void createSolutionAndDealCards() {		
 		// Create random number generator
 		Random random = new Random();
 		
@@ -62,8 +121,49 @@ public class Game {
 			}
 		}
 		
-		// Deal it to the available players
-		TODO
+		// Shuffle the cards
+		Collections.shuffle(dealableCards,random);
 		
+		// Deal it to the available players
+		int playerCount = players.size();
+		int playerIdx = 0;
+		if(playerCount == 0) {
+			System.err.println("No players in the game, cannot deal cards");
+		}else {
+			System.out.println("Dealing " + dealableCards.size() + " cards to " + players.size() + " players");
+			for(Card c : dealableCards) {
+				players.get(playerIdx).acceptCard(c);
+				playerIdx = (playerIdx + 1 ) % playerCount;
+			}					
+		}
 	}	
+	
+	public static void main(String[] args) {
+		Game g = new Game();
+		g.addPlayer("Philip");
+		g.addPlayer("Philip2");
+		
+		Player philip = g.getPlayer("Philip");
+		
+		List<Token> gameTokens; 
+		gameTokens = g.getAvailableTokens();
+		System.out.println("\nGame Tokens:");
+		for(Token t : gameTokens) {
+			System.out.println(t.getDisplayName());
+		}
+
+		for(Token t : gameTokens) {
+			System.out.println("\nAssigning token " + t.getDisplayName() + "...");
+			philip.assignToken(t);
+			philip.assignToken(t);
+			List<Token> availableTokens = g.getAvailableTokens();
+			System.out.println("Available Tokens:");
+			for(Token t2 : availableTokens) {
+				System.out.println(t2.getDisplayName());
+			}
+		}
+		
+		System.out.println("");
+		g.createSolutionAndDealCards();
+	}
 }

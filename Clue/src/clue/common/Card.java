@@ -3,16 +3,21 @@ package clue.common;
 public abstract class Card {
 	// Enumeration
 	public enum CardType{
-		ROOM(0),
-		TOKEN(1),
-		WEAPON(2);
+		ROOM(0,"Room"),
+		TOKEN(1,"Token"),
+		WEAPON(2,"Weapon");
 		
 		private final int id;
-		CardType(int id){
+		private final String displayName;
+		CardType(int id, String displayName){
 			this.id = id;
+			this.displayName = displayName;
 		}
 		public int getValue() {
 			return id;
+		}
+		public String toString() {
+			return displayName;
 		}
 	}
 	
