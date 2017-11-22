@@ -9,9 +9,9 @@ public abstract class BoardPiece {
 	// Constructor
 	public BoardPiece(String displayName) {
 		// Initialize member variables
-		setDisplayName(displayName);
-		setLocationX(-1);
-		setLocationY(-1);
+		this.displayName = displayName;
+		this.locationX = -1;
+		this.locationY = -1;
 	}
 		
 	// Get methods
@@ -29,10 +29,8 @@ public abstract class BoardPiece {
 	public void setDisplayName(String displayName) {
 		this.displayName = displayName;
 	}
-	public void setLocationX(int locationX) {
+	public void setLocationXY(int locationX, int locationY) {
 		this.locationX = locationX;
-	}
-	public void setLocationY(int locationY) {
 		this.locationY = locationY;
 	}
 }

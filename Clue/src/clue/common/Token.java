@@ -62,14 +62,16 @@ public class Token extends BoardPiece {
 	}
 	
 	// Set methods
-	public void setPreviousValid(boolean previousValid) {
-		this.previousValid = previousValid;
-	}
-	public void setPreviousX(int previousX) {
-		this.previousX = previousX;
-	}
-	public void setPreviousY(int previousY) {
-		this.previousY = previousY;
+	@Override
+	public void setLocationXY(int locationX, int locationY) {
+		// Set current location as previous location
+		previousX = this.locationX;
+		previousY = this.locationY;
+		previousValid = (previousX >= 0 && previousY >= 0);
+
+		// Set the new location
+		this.locationX = locationX;
+		this.locationY = locationY;
 	}
 	public void setAvailable(boolean available) {
 		this.available = available;

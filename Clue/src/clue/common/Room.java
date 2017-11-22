@@ -33,7 +33,7 @@ public class Room extends BoardLocation {
 	// Constructor
 	public Room(RoomId roomId) {
 		// Parent constructor, effectively no limit to room capacity
-		super(roomId.getDefaultName(),Integer.MAX_VALUE);
+		super(LocationType.ROOM,roomId.getDefaultName(),Integer.MAX_VALUE);
 				
 		// Set member variables
 		this.roomId = roomId;

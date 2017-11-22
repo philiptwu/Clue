@@ -1,31 +1,61 @@
 package clue.common;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import clue.common.GameBoard.MoveDirection;
+
 public abstract class BoardLocation {
+	// Enumeration
+	public enum LocationType{
+		ROOM(0,"Room"),
+		HALLWAY(1,"Hallway");	
+		
+		private final int id;
+		private final String defaultName;
+		LocationType(int id, String defaultName){
+			this.id = id;
+			this.defaultName = defaultName;
+		}
+		public int getValue() {
+			return id;
+		}
+		public String getDefaultName() {
+			return defaultName;
+		}
+	}
+	
 	// Member variables
+	protected LocationType locationType;
 	protected String displayName;
 	protected int locationX;
 	protected int locationY;
 	protected int capacity;
-	protected Set<BoardPiece> occupants;
-	protected Set<BoardLocation> neighbors;
+	protected Set<Weapon> weapons;
+	protected Set<Token> tokens;
+	protected Map<MoveDirection,BoardLocation> neighbors;
 	
 	// Constructor
-	public BoardLocation(String displayName,int capacity) {
+	public BoardLocation(LocationType locationType, String displayName,int capacity) {
 		// Initialize member variables
-		setDisplayName(displayName);
-		setLocationX(-1);
-		setLocationY(-1);
-		setCapacity(capacity);
+		this.locationType = locationType;
+		this.displayName = displayName;
+		this.locationX = -1;
+		this.locationY = -1;
+		this.capacity = capacity;
 		
 		// Initialize data structures
-		occupants = new HashSet<BoardPiece>();
-		neighbors = new HashSet<BoardLocation>();
+		weapons = new HashSet<Weapon>();
+		tokens = new HashSet<Token>();
+		neighbors = new HashMap<MoveDirection,BoardLocation>();
 	}
 	
 	// Get methods
+	public LocationType getLocationType() {
+		return locationType;
+	}
 	public String getDisplayName() {
 		return displayName;
 	}
@@ -35,18 +65,14 @@ public abstract class BoardLocation {
 	public int getLocationY() {
 		return locationY;
 	}
-	public int getCapacity() {
-		return capacity;
+	public boolean isFull() {
+		return (tokens.size() >= capacity);
 	}
-	public Set<BoardPiece> getOccupants(){
+	public Set<Token> getTokens(){
 		// Shallow copy
-		return new HashSet<BoardPiece>(occupants);
+		return new HashSet<Token>(tokens);
 	}
-	public Set<BoardLocation> getNeighbors(){
-		// Shallow copy
-		return new HashSet<BoardLocation>(neighbors);
-	}
-	
+
 	// Set methods
 	public void setDisplayName(String displayName) {
 		this.displayName = displayName;
@@ -62,25 +88,47 @@ public abstract class BoardLocation {
 	}
 
 	// Data structure modifiers
-	public boolean addOccupant(BoardPiece boardPiece) {
-		if(occupants.size() > capacity) {
+	public boolean addToken(Token boardPiece) {
+		if(isFull()) {
 			// Already full
+			System.err.println("Cannot add token to " + displayName + ", location is already full");
 			return false;
 		}else {
 			// Try adding the board piece
-			boolean addSuccess = occupants.add(boardPiece);
+			boolean addSuccess = tokens.add(boardPiece);
 			if(addSuccess) {
 				// Update the board piece's location
-				boardPiece.setLocationX(this.locationX);
-				boardPiece.setLocationY(this.locationY);
+				boardPiece.setLocationXY(this.locationX,this.locationY);
 			}
 			return addSuccess;
 		}
 	}
-    public boolean removeOccupant(BoardPiece boardPiece) {
-    	return occupants.remove(boardPiece);
+	public boolean addWeapon(Weapon boardPiece) {
+		boolean addSuccess = weapons.add(boardPiece);
+		if(addSuccess) {
+			// Update the board piece's location
+			boardPiece.setLocationXY(this.locationX,this.locationY);
+		}
+		return addSuccess;
+	}
+    public boolean removeToken(Token boardPiece) {
+    	return tokens.remove(boardPiece);
     }
-    public void addNeighbor(BoardLocation boardLocation) {
-    	this.neighbors.add(boardLocation);
+    public boolean removeWeapon(Weapon boardPiece) {
+    	return weapons.remove(boardPiece);
+    }
+    public void addNeighbor(MoveDirection moveDirection, BoardLocation boardLocation) {
+    	neighbors.put(moveDirection, boardLocation);
+    }
+    
+    // Get the neighbors that are not already full
+    public Map<MoveDirection,BoardLocation> getValidMoves() {
+    	Map<MoveDirection,BoardLocation> validMoves = new HashMap<MoveDirection,BoardLocation>();
+    	for(MoveDirection m : neighbors.keySet()) {
+    		if(!neighbors.get(m).isFull()) {
+    			validMoves.put(m, neighbors.get(m));
+    		}
+    	}
+    	return validMoves;
     }
 }

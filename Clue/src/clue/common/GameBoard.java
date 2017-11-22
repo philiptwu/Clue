@@ -4,11 +4,35 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import clue.common.BoardLocation.LocationType;
 import clue.common.Room.RoomId;
 import clue.common.Token.TokenId;
 import clue.common.Weapon.WeaponId;
 
 public class GameBoard {
+	public enum MoveDirection{
+		NORTH(0,"North"),
+		SOUTH(1,"South"),
+		WEST(2,"West"),
+		EAST(3,"East"),
+		SECRET(4,"Secret");
+		
+		private final int id;
+		private final String displayName;
+		MoveDirection(int id, String displayName){
+			this.id = id;
+			this.displayName = displayName;
+		}
+		public int getValue() {
+			return id;
+		}
+		public String toString() {
+			return displayName;
+		}
+	}
+	
 	// Member variables
 	protected BoardLocation[][] grid;
 	protected Map<TokenId,Token> tokenMap;
@@ -35,7 +59,7 @@ public class GameBoard {
 		Token mrsPeacock = new Token(TokenId.MRS_PEACOCK);
 		Token mrGreen = new Token(TokenId.MR_GREEN);
 		Token mrsWhite = new Token(TokenId.MRS_WHITE);
-				
+		
 		// Add tokens to the token map for easy lookup later
 		tokenMap.put(missScarlet.getTokenId(), missScarlet);
 		tokenMap.put(colonelMustard.getTokenId(), colonelMustard);
@@ -43,6 +67,9 @@ public class GameBoard {
 		tokenMap.put(mrsPeacock.getTokenId(), mrsPeacock);
 		tokenMap.put(mrGreen.getTokenId(), mrGreen);
 		tokenMap.put(mrsWhite.getTokenId(),  mrsWhite);
+
+		// Place tokens in board
+		initializeDefaultTokenLocations();
 		
 		// Create weapons but don't place them in game board
 		Weapon candlestick = new Weapon(WeaponId.CANDLESTICK);
@@ -69,14 +96,61 @@ public class GameBoard {
 	// Method to initialize default token locations
 	public void initializeDefaultTokenLocations() {
 		// Add tokens to board
-		grid[0][3].addOccupant(tokenMap.get(TokenId.MISS_SCARLET));
-		grid[1][4].addOccupant(tokenMap.get(TokenId.COLONEL_MUSTARD));
-		grid[1][0].addOccupant(tokenMap.get(TokenId.PROFESSOR_PLUM));
-		grid[3][0].addOccupant(tokenMap.get(TokenId.MRS_PEACOCK));
-		grid[4][1].addOccupant(tokenMap.get(TokenId.MR_GREEN));
-		grid[4][3].addOccupant(tokenMap.get(TokenId.MRS_WHITE));
+		grid[0][3].addToken(tokenMap.get(TokenId.MISS_SCARLET));
+		grid[1][4].addToken(tokenMap.get(TokenId.COLONEL_MUSTARD));
+		grid[1][0].addToken(tokenMap.get(TokenId.PROFESSOR_PLUM));
+		grid[3][0].addToken(tokenMap.get(TokenId.MRS_PEACOCK));
+		grid[4][1].addToken(tokenMap.get(TokenId.MR_GREEN));
+		grid[4][3].addToken(tokenMap.get(TokenId.MRS_WHITE));
 	}
+	
+	// Get the valid move directions for a particular token ID
+	public Set<MoveDirection> getMoveDirections(Token t){
+		// Get token's current position's valid neighbors
+		return grid[t.getLocationX()][t.getLocationY()].getValidMoves().keySet();		
+	}
+	
+	// Move the token
+	public void moveToken(Token t, MoveDirection m) {
+		Map<MoveDirection, BoardLocation> validMoves = grid[t.getLocationX()][t.getLocationY()].getValidMoves();
+		moveToken(t,validMoves.get(m));
+	}
+	public void moveToken(Token t, BoardLocation newLocation) {
+		// Remove token from old location
+		BoardLocation currLocation = grid[t.getLocationX()][t.getLocationY()];
+		currLocation.removeToken(t);
 			
+		// Add token to new location
+		newLocation.addToken(t);
+	}
+	
+	// Move the weapon
+	public void moveWeapon(Weapon w, BoardLocation newLocation) {
+		// Remove token from old location
+		BoardLocation currLocation = grid[w.getLocationX()][w.getLocationY()];
+		currLocation.removeWeapon(w);
+			
+		// Add token to new location
+		newLocation.addWeapon(w);
+	}
+	
+	// Move the token to the closest room
+	public void moveTokenToClosestRoom(Token t) {
+		// Get token's current location
+		BoardLocation currLocation = grid[t.getLocationX()][t.getLocationY()];
+		
+		// Check to see if it is a room
+		if(currLocation.getLocationType() != LocationType.ROOM) {
+			// Get neighbor locations
+			Map<MoveDirection,BoardLocation> validMoves = currLocation.getValidMoves();			
+			for(MoveDirection m : validMoves.keySet()) {
+				// Move to first available location
+				moveToken(t, validMoves.get(m));
+				return;
+			}
+		}
+	}
+	
 	// Method to initialize a game grid locations
 	public void initializeGridLocations() {
 		// Create rooms
@@ -132,28 +206,28 @@ public class GameBoard {
 				// Add adjacent neighbors (as applicable)
 				// Up neighbor
 				if(i-1 >= 0 && grid[i-1][j] != null) {
-					grid[i][j].addNeighbor(grid[i-1][j]);
+					grid[i][j].addNeighbor(MoveDirection.NORTH,grid[i-1][j]);
 				}
 				// Down neighbor
 				if(i+1 < 5 && grid[i+1][j] != null) {
-					grid[i][j].addNeighbor(grid[i+1][j]);
+					grid[i][j].addNeighbor(MoveDirection.SOUTH,grid[i+1][j]);
 				}
 				// Left neighbor
 				if(j-1 >= 0 && grid[i][j-1] != null) {
-					grid[i][j].addNeighbor(grid[i][j-1]);
+					grid[i][j].addNeighbor(MoveDirection.WEST,grid[i][j-1]);
 				}
 				// Right neighbor
 				if(j+1 < 5 && grid[i][j+1] != null) {
-					grid[i][j].addNeighbor(grid[i][j+1]);
+					grid[i][j].addNeighbor(MoveDirection.EAST,grid[i][j+1]);
 				}					
 			}
 		}
 		
 		// Add diagonal neighbors
-		grid[0][0].addNeighbor(grid[4][4]);
-		grid[0][4].addNeighbor(grid[4][0]);
-		grid[4][0].addNeighbor(grid[0][4]);
-		grid[4][4].addNeighbor(grid[0][0]);
+		grid[0][0].addNeighbor(MoveDirection.SECRET,grid[4][4]);
+		grid[0][4].addNeighbor(MoveDirection.SECRET,grid[4][0]);
+		grid[4][0].addNeighbor(MoveDirection.SECRET,grid[0][4]);
+		grid[4][4].addNeighbor(MoveDirection.SECRET,grid[0][0]);
 	}
 	
 	// Helper function to add a board location to the grid and set its coordinates

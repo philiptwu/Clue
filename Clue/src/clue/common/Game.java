@@ -5,10 +5,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
-import clue.common.Room.RoomId;
-import clue.common.Token.TokenId;
-import clue.common.Weapon.WeaponId;
+import clue.common.GameBoard.MoveDirection;
 
 public class Game {
 	// Enumeration
@@ -66,6 +65,9 @@ public class Game {
 		
 		// No winners yet
 		winnerIdx = -1;
+		
+		// No one has the turn
+		turnPlayerIdx = -1;
 	}
 	
 	// Checks if the game satisfies all pre-conditions to start can start
@@ -125,8 +127,28 @@ public class Game {
 		}
 	}
 
-	public void move() {
-		// TODO
+	// Get the set of valid move directions
+	public Set<MoveDirection> getValidMoveDirections() {
+		Token t = players.get(turnPlayerIdx).getToken();
+		return gameBoard.getMoveDirections(t);
+	}
+	
+	// Move the token to one of the valid move directions
+	public boolean move(MoveDirection m) {
+		// Get the set of valid move directions
+		Set<MoveDirection> validMoveDirections = getValidMoveDirections();
+		
+		// Make sure proposed direction is in that list
+		if(validMoveDirections.contains(m)) {
+			// Move is valid
+			Token t = players.get(turnPlayerIdx).getToken();
+			gameBoard.moveToken(t,m);
+			return true;
+		}else {
+			// Move is not valid
+			System.err.println("Selected move direction " + m + " is not valid");
+			return false;
+		}
 	}
 	
 	// Make a suggestion
@@ -144,7 +166,9 @@ public class Game {
 		}else {
 			// Accusation is incorrect, set the player as inactive and end their turn automatically
 			System.out.println("Accusation of " + accusation + " is incorrect, player loses!");
-			players.get(turnPlayerIdx).setInactive();
+			Player loser = players.get(turnPlayerIdx);
+			loser.setInactive();
+			gameBoard.moveTokenToClosestRoom(loser.getToken());
 			endTurn();
 		}
 	}
@@ -172,6 +196,15 @@ public class Game {
 			}
 		}
 		return null;
+	}
+	
+	// Gets the player who has the current turn
+	public Player getTurnPlayer() {
+		if(turnPlayerIdx < 0) {
+			return null;
+		}else {
+			return players.get(turnPlayerIdx);
+		}
 	}
 	
 	// Create and add a new player only if another player with the same name does not already exist in the game
@@ -264,7 +297,6 @@ public class Game {
 		if(playerCount == 0) {
 			System.err.println("No players in the game, cannot deal cards");
 		}else {
-			System.out.println("Dealing " + dealableCards.size() + " cards to " + players.size() + " players");
 			for(Card c : dealableCards) {
 				players.get(playerIdx).acceptCard(c);
 				playerIdx = (playerIdx + 1 ) % playerCount;
@@ -274,18 +306,57 @@ public class Game {
 	
 	public static void main(String[] args) {
 		Game g = new Game();
-		Player p1 = g.addPlayer("P1");
-		Player p2 = g.addPlayer("P2");
-		Player p3 = g.addPlayer("P3");
+		Player philip = g.addPlayer("Philip");
+		Player angel = g.addPlayer("Angel");
+		Player george = g.addPlayer("George");
 		
 		List<Token> gameTokens; 
 		gameTokens = g.getAvailableTokens();
-		p1.assignToken(gameTokens.get(0));
-		p2.assignToken(gameTokens.get(1));
-		p1.assignToken(gameTokens.get(2));
+		System.out.println("Available tokens: " );
+		for(Token t : gameTokens) {
+			System.out.println(t.getDisplayName() + " at " + t.getLocationX() + "," + t.getLocationY());
+		}
+		Token tk = gameTokens.get(0);
+		System.out.println("Assigning " + tk.getDisplayName() + " to " + philip.getPlayerName());
+		philip.assignToken(tk);
+
+		tk = gameTokens.get(1);
+		System.out.println("Assigning " + tk.getDisplayName() + " to " + angel.getPlayerName());
+		angel.assignToken(tk);
+		
+		tk = gameTokens.get(2);
+		System.out.println("Assigning " + tk.getDisplayName() + " to " + philip.getPlayerName());
+		philip.assignToken(tk);
+		
+		tk = gameTokens.get(0);
+		System.out.println("Assigning " + tk.getDisplayName() + " to " + george.getPlayerName());		
+		george.assignToken(tk);
 		
 		System.out.println("Game can start : " + g.checkIfGameCanStart());
 		
 		g.startGame();
+		
+		Player turnPlayer = g.getTurnPlayer();
+		System.out.println("\n" + turnPlayer.getPlayerName() + " location: (" + turnPlayer.getToken().getLocationX() + "," + turnPlayer.getToken().getLocationY() + ")");
+				
+		System.out.println("\nValid move directions:");
+		Set<MoveDirection> validMoveDirections = g.getValidMoveDirections();
+		MoveDirection turnMoveDirection = null;
+		for(MoveDirection m : validMoveDirections) {
+			turnMoveDirection = m;
+			System.out.println(m);
+		}
+
+		System.out.println("\nMoving " + turnMoveDirection);
+		g.move(turnMoveDirection);
+		
+		System.out.println("\n" + turnPlayer.getPlayerName() + " location: (" + turnPlayer.getToken().getLocationX() + "," + turnPlayer.getToken().getLocationY() + ")");
+		
+		System.out.println("\nValid move directions:");
+		validMoveDirections = g.getValidMoveDirections();
+		for(MoveDirection m : validMoveDirections) {
+			System.out.println(m);
+		}
+		
 	}
 }
