@@ -93,6 +93,16 @@ public class GameBoard {
 		return new ArrayList<Token>(tokenMap.values());
 	}
 	
+	// Get all the rooms
+	public List<Room> getRooms(){
+		return new ArrayList<Room>(roomMap.values());
+	}
+	
+	// Get all the weapons
+	public List<Weapon> getWeapons(){
+		return new ArrayList<Weapon>(weaponMap.values());
+	}
+	
 	// Method to initialize default token locations
 	public void initializeDefaultTokenLocations() {
 		// Add tokens to board

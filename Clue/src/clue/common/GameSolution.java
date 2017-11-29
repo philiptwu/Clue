@@ -36,6 +36,6 @@ public class GameSolution {
 	
 	// Debug
 	public String toString() {
-		return roomId.getDefaultName() + ", " + tokenId.getDefaultName() + ", " + weaponId.getDefaultName();
+		return tokenId.getDefaultName() + " with " + weaponId.getDefaultName() + " in " + roomId.getDefaultName();
 	}
 }
