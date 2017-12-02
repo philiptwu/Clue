@@ -45,4 +45,13 @@ public abstract class PlayerAction {
 		return playerId;
 	}
 	
+	// Reverse lookup PlayerActionType by value
+	public static PlayerActionType getPlayerActionTypeByValue(int id) {
+		for(PlayerActionType pat : PlayerActionType.values()) {
+			if(id == pat.getValue()) {
+				return pat;
+			}
+		}
+		return null;
+	}
 }

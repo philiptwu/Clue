@@ -183,6 +183,15 @@ public class GameBoard {
 		}
 	}
 	
+	// Whether or not a token is in a room
+	public boolean getIsTokenInRoom(Token t) {
+		// Get token's current location
+		BoardLocation currLocation = grid[t.getLocationX()][t.getLocationY()];
+		
+		// Check to see whether the current location is a room
+		return (currLocation.getLocationType() == LocationType.ROOM);
+	}
+	
 	// Method to initialize a game grid locations
 	public void initializeGridLocations() {
 		// Create rooms

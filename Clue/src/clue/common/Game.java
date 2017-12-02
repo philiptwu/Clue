@@ -217,14 +217,15 @@ public class Game {
 					validActions.add(PlayerActionType.LEAVE_GAME);
 				}
 		}else if(gameStatus == GameStatus.PLAYING) {
-			if(players.get(turnPlayerIdx).getPlayerName().equals(playerId)) {
+			Player turnPlayer = players.get(turnPlayerIdx);
+			if(turnPlayer.getPlayerName().equals(playerId)) {
 				// This is the turn player
 				if(!turnPlayerMoved) {
 					// Can move if haven't already
 					validActions.add(PlayerActionType.MOVE);
 				}
-				if(!turnPlayerSuggested) {
-					// Can suggest if haven't already
+				if(!turnPlayerSuggested && gameBoard.getIsTokenInRoom(turnPlayer.getToken())) {
+					// Can suggest if haven't already and we are in a room
 					validActions.add(PlayerActionType.MAKE_SUGGESTION);
 				}
 				// Can always accuse and end turn
@@ -299,8 +300,75 @@ public class Game {
 	}
 	
 	// Make a suggestion
-	public void suggest(GameSolution suggestion) {
-		// TODO
+	public PlayerActionResult suggest(String playerId, String roomId, String tokenId, String weaponId) {
+		// Determine if we can take this action
+		if(gameStatus != GameStatus.PLAYING ) {
+			// Cannot suggest if game is not playing
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot make a suggestion when game is not being played");
+		}
+		
+		// Make sure it is the player's turn
+		Player currPlayer = players.get(turnPlayerIdx);
+		if(!currPlayer.getPlayerName().equals(playerId)) {
+			// Cannot accuse when it is not your turn
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot make a suggestion when it is not your turn");
+		}
+		
+		// Get the room
+		List<Room> rooms = gameBoard.getRooms();
+		Room suggestedRoom = null;
+		for(Room r : rooms) {
+			if(r.getDisplayName().equals(roomId)) {
+				suggestedRoom = r;
+			}
+		}
+		if(suggestedRoom == null) {
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot make a suggestion with room " + roomId + " because it does not exist in the game");
+		}
+		
+		// Get the token
+		List<Token> tokens = gameBoard.getTokens();
+		Token suggestedToken = null;
+		for(Token t : tokens) {
+			if(t.getDisplayName().equals(tokenId)) {
+				suggestedToken = t;
+			}
+		}
+		if(suggestedToken == null) {
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot make a suggestion with token " + tokenId + " because it does not exist in the game");
+		}
+		
+		// Get the weapon
+		List<Weapon> weapons = gameBoard.getWeapons();
+		Weapon suggestedWeapon = null;
+		for(Weapon w : weapons) {
+			if(w.getDisplayName().equals(weaponId)) {
+				suggestedWeapon = w;
+			}
+		}
+		if(suggestedWeapon == null) {
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot make a suggestion with weapon " + weaponId + " because it does not exist in the game");
+		}
+		
+		// Create the game solution
+		GameSolution suggestion = new GameSolution(suggestedRoom.getRoomId(), suggestedToken.getTokenId(), suggestedWeapon.getWeaponId());
+		
+		//TODO: CONTINUE WRITING CODE HERE
+		return null;
+	}
+	
+	public void showCard() {
+		
 	}
 	
 	// Make an accusation, wins game if correct, ends turn (and loses) if incorrect
