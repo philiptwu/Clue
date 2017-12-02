@@ -8,6 +8,7 @@ public class Player {
 	protected List<Card> cards;
 	protected Token token;
 	protected boolean active;
+	protected boolean voted;
 	
 	// Constructor
 	public Player(String playerName) {
@@ -15,6 +16,7 @@ public class Player {
 		cards = new ArrayList<Card>();
 		this.token = null;
 		this.active = true;
+		this.voted = false;
 	}
 
 	// Get methods
@@ -24,10 +26,19 @@ public class Player {
 	public boolean getActive() {
 		return active;
 	}
+	public boolean getVoted() {
+		return voted;
+	}
+	public List<Card> getCards(){
+		return new ArrayList<Card>(cards);
+	}
 	
 	// Set methods
 	public void setInactive() {
 		this.active = false;
+	}
+	public void setVoted() {
+		this.voted = true;
 	}
 	
 	// Token modifier methods

@@ -6,11 +6,12 @@ public abstract class PlayerAction {
 		LEAVE_GAME(1,"Leave Game"),
 		CHOOSE_TOKEN(2,"Choose Token"),
 		DISCARD_TOKEN(3,"Discard Token"),
-		START_GAME(4,"Start Game"),
+		VOTE_START_GAME(4,"Start Game"),
 		MOVE(5,"Move"),
 		MAKE_SUGGESTION(6,"Make Suggestion"),
 		SHOW_CARD(7,"Show Card"),
-		MAKE_ACCUSATION(8,"Make Accusation");
+		MAKE_ACCUSATION(8,"Make Accusation"),
+		END_TURN(9,"End Turn");
 		
 		private final int id;
 		private final String displayName;

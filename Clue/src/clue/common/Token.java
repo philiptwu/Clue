@@ -44,6 +44,16 @@ public class Token extends BoardPiece {
 		this.previousY = -1;
 	}
 	
+	// Reverse lookup token ID by value
+	public static TokenId getTokenIdByValue(int id) {
+		for(TokenId tid : TokenId.values()) {
+			if(id == tid.getValue()) {
+				return tid;
+			}
+		}
+		return null;
+	}
+	
 	// Get methods
 	public TokenId getTokenId() {
 		return tokenId;

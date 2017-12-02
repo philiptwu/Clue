@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Random;
 
 import clue.common.BoardLocation.LocationType;
 import clue.common.Room.RoomId;
@@ -40,7 +40,7 @@ public class GameBoard {
 	protected Map<WeaponId,Weapon> weaponMap;
 	
 	// Constructor to create a blank initialized game board
-	public GameBoard() {
+	public GameBoard(Random random) {
 		// Initialize data structures
 		grid = new BoardLocation[5][5];
  		tokenMap = new HashMap<TokenId,Token>();
@@ -86,6 +86,19 @@ public class GameBoard {
 		weaponMap.put(revolver.getWeaponId(), revolver);
 		weaponMap.put(rope.getWeaponId(), rope);
 		weaponMap.put(wrench.getWeaponId(), wrench);
+		
+		// Randomly place weapons on board
+		initializeRandomWeaponLocations(random);
+	}
+	
+	// Reverse lookup move direction by value
+	public static MoveDirection getMoveDirectionByValue(int id) {
+		for(MoveDirection md : MoveDirection.values()) {
+			if(id == md.getValue()) {
+				return md;
+			}
+		}
+		return null;
 	}
 	
 	// Gets all the tokens
@@ -114,10 +127,19 @@ public class GameBoard {
 		grid[4][3].addToken(tokenMap.get(TokenId.MRS_WHITE));
 	}
 	
+	// Method to randomize initial weapon locations
+	public void initializeRandomWeaponLocations(Random random) {
+		List<Room> rooms = new ArrayList<Room>(roomMap.values());
+		for (Weapon w : weaponMap.values()) {
+			// Randomly choose a room to place each weapon
+			rooms.get(random.nextInt(rooms.size())).addWeapon(w);
+		}
+	}
+	
 	// Get the valid move directions for a particular token ID
-	public Set<MoveDirection> getMoveDirections(Token t){
+	public List<MoveDirection> getMoveDirections(Token t){
 		// Get token's current position's valid neighbors
-		return grid[t.getLocationX()][t.getLocationY()].getValidMoves().keySet();		
+		return new ArrayList<MoveDirection>(grid[t.getLocationX()][t.getLocationY()].getValidMoves().keySet());		
 	}
 	
 	// Move the token

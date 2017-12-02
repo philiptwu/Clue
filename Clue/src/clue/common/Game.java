@@ -5,14 +5,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
-import clue.action.PlayerAction;
 import clue.action.PlayerAction.PlayerActionType;
-import clue.action.PlayerActionJoinGame;
 import clue.common.GameBoard.MoveDirection;
-import clue.status.PlayerStatus;
-import clue.status.PlayerStatus.PlayerStatusType;
+import clue.result.PlayerActionResult;
+import clue.result.GameResult.GameResultCommunicationType;
+import clue.result.PlayerActionResult.ActionResultType;
 
 public class Game {
 	// Enumeration
@@ -44,25 +42,29 @@ public class Game {
 	protected List<RoomCard> roomCards;
 	protected List<TokenCard> tokenCards;
 	protected List<WeaponCard> weaponCards;
-	protected List<Player> players;
+	public List<Player> players;
 	protected GameSolution gameSolution;
-	protected GameStatus gameStatus;
-	protected int turnPlayerIdx;
-	protected boolean turnPlayerMoved;
-	protected boolean turnPlayerSuggested;
-	protected int winnerIdx;
-	protected int randomSeed;
+	public GameStatus gameStatus;
+	public int turnPlayerIdx;
+	public boolean turnPlayerMoved;
+	public boolean turnPlayerSuggested;
+	public int winnerIdx;
+	public String gameId;
+	protected Random random;
 	
 	// Constructor
-	public Game(int randomSeed) {
-		// Save the random seed
-		this.randomSeed = randomSeed;
+	public Game(int randomSeed, String gameId) {
+		// Create a random number generator
+		random = new Random(randomSeed);
+		
+		// Save the game ID
+		this.gameId = gameId;
 		
 		// Game is initializing
 		gameStatus = GameStatus.INITIALIZING;
 		
 		// Create a new game board but don't place tokens or weapons yet
-		gameBoard = new GameBoard();
+		gameBoard = new GameBoard(random);
 		
 		// Create a complete set of cards but don't deal them yet
 		roomCards = RoomCard.getCards();
@@ -80,39 +82,52 @@ public class Game {
 	}
 	
 	// Checks if the game satisfies all pre-conditions to start can start
-	public PlayerStatus checkIfGameCanStart() {
+	private PlayerActionResult checkIfGameCanStart() {
 		// Game status must be in INITIALIZING
 		if(gameStatus != GameStatus.INITIALIZING) {
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Game cannot start since it was already started");
 		}
 		
 		// Need at least 3 players
 		if(players.size() < MIN_PLAYERS) {
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-					"Cannot start the game with less than 3 players, currently have " + players.size());
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot start the game yet with less than 3 players, currently have " + players.size());
 		}
 		
 		// All players must have tokens
 		for(Player p : players) {
 			if(!p.hasToken()) {
-				return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-						"Cannot start the game because player " + p.getPlayerName() + " has not claimed a token yet");
+				return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+						PlayerActionResult.ActionResultType.ACTION_REJECTED,
+						"Cannot start the game yet because player " + p.getPlayerName() + " has not claimed a token");
 			}
 		}
 			
+		// All players must be ready to start
+		for(Player p : players) {
+			if(!p.getVoted()) {
+				return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+						PlayerActionResult.ActionResultType.ACTION_REJECTED,
+						"Cannot start the game yet because player " + p.getPlayerName() + " has not voted to start the game");
+			}
+		}
+		
 		// If we got this far then we can start
-		return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
+		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+				PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
 				"All pre-conditions to start the game have been satisfied");
 	}
 	
 	// Transitions game status from INITIALIZING to PLAYING only if all pre-conditions are met
-	public PlayerStatus startGame() {
+	public PlayerActionResult startGame() {
 		// Check if game can start
-		PlayerStatus ps = checkIfGameCanStart();
+		PlayerActionResult ps = checkIfGameCanStart();
 
 		// Return error if we got one while checking if game can start
-		if(ps.getplayerStatusType() == PlayerStatusType.ACTION_REJECTED) {
+		if(ps.getPlayerActionResultType() == ActionResultType.ACTION_REJECTED) {
 			return ps;
 		}
 				
@@ -136,10 +151,47 @@ public class Game {
 		gameStatus = GameStatus.PLAYING;
 		
 		// Report success
-		return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
+		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+				PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
 				"The game has started");
 	}
-
+	
+	// Player votes to start the game
+	public PlayerActionResult voteStartGame(String playerId) {
+		// Determine if we can take this action
+		if(gameStatus != GameStatus.INITIALIZING ) {
+			// Cannot vote to start the game if game has already started
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot vote to start a game that already started");
+		}
+		
+		// Get the player
+		Player p = getPlayer(playerId);
+		if(p == null) {
+			// No such player
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot vote to start the game because player " + playerId + " does not exist in the game");
+		}else if(!p.hasToken()) {
+			// Does not have token yet
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot vote to start the game because player " + playerId + " does not have a token yet");
+		}else if(p.getVoted()) {
+			// Already voted to start
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Player " + playerId + " has already voted to start the game");
+		}else {
+			// Conditions are good to start
+			p.setVoted();
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+					"Player " + playerId + " has voted to start the game");
+		}		
+	}
+	
 	// Get the set of valid player actions
 	public List<PlayerActionType> getValidPlayerActions(String playerId){
 		// Create the empty list of actions
@@ -147,10 +199,39 @@ public class Game {
 				
 		// Specify what actions are valid and when
 		if(gameStatus == GameStatus.INITIALIZING) {
-			TBD
-		}else if(gameStatus == gameStatus.PLAYING) {
-			TBD
-		}else if(gameStatus == gameStatus.FINISHED) {
+				Player p = getPlayer(playerId);
+				if(p == null) {
+					// If player doesn't exist in the game, then the only thing it can do is join
+					validActions.add(PlayerActionType.JOIN_GAME);
+				}else if(!p.getVoted()){	
+					// This player is already in the game
+					if(p.hasToken()) {
+						// Can discard existing token
+						validActions.add(PlayerActionType.DISCARD_TOKEN);
+						validActions.add(PlayerActionType.VOTE_START_GAME);
+					}else {
+						// Can grab a new token
+						validActions.add(PlayerActionType.CHOOSE_TOKEN);
+					}
+					// Can always leave game
+					validActions.add(PlayerActionType.LEAVE_GAME);
+				}
+		}else if(gameStatus == GameStatus.PLAYING) {
+			if(players.get(turnPlayerIdx).getPlayerName().equals(playerId)) {
+				// This is the turn player
+				if(!turnPlayerMoved) {
+					// Can move if haven't already
+					validActions.add(PlayerActionType.MOVE);
+				}
+				if(!turnPlayerSuggested) {
+					// Can suggest if haven't already
+					validActions.add(PlayerActionType.MAKE_SUGGESTION);
+				}
+				// Can always accuse and end turn
+				validActions.add(PlayerActionType.MAKE_ACCUSATION);
+				validActions.add(PlayerActionType.END_TURN);
+			}
+		}else if(gameStatus == GameStatus.FINISHED) {
 			// Do nothing
 		}
 		
@@ -158,18 +239,34 @@ public class Game {
 		return validActions;
 	}
 	
+	public GameStatus getGameStatus() {
+		return gameStatus;
+	}
+	
+	public GameBoard getGameBoard() {
+		return gameBoard;
+	}
+	
 	// Get the set of valid move directions
-	public Set<MoveDirection> getValidMoveDirections() {
-		Token t = players.get(turnPlayerIdx).getToken();
-		return gameBoard.getMoveDirections(t);
+	public List<MoveDirection> getValidMoveDirections(String playerId) {
+		Player turnPlayer = players.get(turnPlayerIdx);
+		if(gameStatus == GameStatus.PLAYING && turnPlayer.getPlayerName().equals(playerId) && !turnPlayerMoved) {
+			// Move directions only if game is in session, is current player's turn, and player has not moved yet
+			Token t = turnPlayer.getToken();
+			return gameBoard.getMoveDirections(t);
+		}else {
+			// Otherwise player cannot move
+			return new ArrayList<MoveDirection>();
+		}
 	}
 	
 	// Move the token to one of the valid move directions
-	public PlayerStatus move(String playerId, MoveDirection m) {
+	public PlayerActionResult move(String playerId, MoveDirection m) {
 		// Determine if we can take this action
 		if(gameStatus != GameStatus.PLAYING ) {
 			// Cannot move if game is not playing
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot move when game is not being played");
 		}
 		
@@ -177,23 +274,26 @@ public class Game {
 		Player currPlayer = players.get(turnPlayerIdx);
 		if(!currPlayer.getPlayerName().equals(playerId)) {
 			// Cannot move when it is not your turn
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot move when it is not your turn");
 		}
 		
 		// Get the set of valid move directions
-		Set<MoveDirection> validMoveDirections = getValidMoveDirections();
+		List<MoveDirection> validMoveDirections = getValidMoveDirections(playerId);
 		
 		// Make sure proposed direction is in that list
 		if(validMoveDirections.contains(m)) {
 			// Move is valid
 			Token t = players.get(turnPlayerIdx).getToken();
 			gameBoard.moveToken(t,m);
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
 				"Player " + playerId + " successfully moved in direction " + m.toString());
 		}else {
 			// Move is not valid
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 				"Player " + playerId + " cannot move in direction " + m.toString());
 		}
 	}
@@ -204,11 +304,12 @@ public class Game {
 	}
 	
 	// Make an accusation, wins game if correct, ends turn (and loses) if incorrect
-	public PlayerStatus accuse(String playerId, String roomId, String tokenId, String weaponId) {
+	public PlayerActionResult accuse(String playerId, String roomId, String tokenId, String weaponId) {
 		// Determine if we can take this action
 		if(gameStatus != GameStatus.PLAYING ) {
 			// Cannot accuse if game is not playing
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot make an accusation when game is not being played");
 		}
 		
@@ -216,7 +317,8 @@ public class Game {
 		Player currPlayer = players.get(turnPlayerIdx);
 		if(!currPlayer.getPlayerName().equals(playerId)) {
 			// Cannot accuse when it is not your turn
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot make an accusation when it is not your turn");
 		}
 		
@@ -229,7 +331,8 @@ public class Game {
 			}
 		}
 		if(accusedRoom == null) {
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot make an accusation with room " + roomId + " because it does not exist in the game");
 		}
 		
@@ -242,7 +345,8 @@ public class Game {
 			}
 		}
 		if(accusedToken == null) {
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot make an accusation with token " + tokenId + " because it does not exist in the game");
 		}
 		
@@ -255,7 +359,8 @@ public class Game {
 			}
 		}
 		if(accusedWeapon == null) {
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot make an accusation with weapon " + weaponId + " because it does not exist in the game");
 		}
 		
@@ -267,23 +372,47 @@ public class Game {
 			// Accusation is correct, player wins
 			gameStatus = GameStatus.FINISHED;
 			winnerIdx = turnPlayerIdx;
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
-				"Accusation of " + accusation + " is correct, player wins!");
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+					"Accusation of " + accusation + " is correct, player " + playerId + " wins!");
 			
 		}else {
 			// Accusation is incorrect, set the player as inactive and end their turn automatically
 			Player loser = players.get(turnPlayerIdx);
 			loser.setInactive();			
 			gameBoard.moveTokenToClosestRoom(loser.getToken());
-			endTurn();
+			endTurn(loser.getPlayerName());
 
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
-				"Accusation of " + accusation + " is incorrect, player loses!");
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+					"Accusation of " + accusation + " is incorrect, player " + playerId + " loses!");
 		}
 	}
 	
 	// Ends the current player's turn and readies the next player
-	public void endTurn() {
+	public PlayerActionResult endTurn(String playerId) {
+		// Determine if we can take this action
+		if(gameStatus != GameStatus.PLAYING ) {
+			// Cannot accuse if game is not playing
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot end turn when game is not being played");
+		}
+		
+		// Make sure it is the player's turn
+		Player p = getPlayer(playerId);
+		if(p == null) {
+			// Cannot end turn for non existent player
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot end turn for " + playerId + " because that player does not exist in the game");
+		}else if(!p.getPlayerName().equals(players.get(turnPlayerIdx).getPlayerName())) {
+			// Cannot end turn when it is not your turn
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot end turn for " + playerId + " because that it is not currently that player's turn");
+		}
+		
 		// Switch to the next player that is active
 		while(true) {
 			turnPlayerIdx = (turnPlayerIdx + 1 ) % players.size();
@@ -295,6 +424,16 @@ public class Game {
 		// Reset bookkeeping flags for this turn
 		turnPlayerMoved = false;
 		turnPlayerSuggested = false;
+		
+		// Return success
+		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+				PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+				"Player " + playerId + " turn has ended");
+	}
+	
+	// Get the game ID
+	public String getGameId() {
+		return gameId;
 	}
 	
 	// Gets a player by player name
@@ -316,54 +455,48 @@ public class Game {
 		}
 	}
 	
-	// Gets a list of active players
-	private List<Player> getActivePlayers(){
-		List<Player> activePlayers = new ArrayList<Player>();
-		for(Player p : players) {
-			if(p.getActive()) {
-				activePlayers.add(p);
-			}
-		}
-		return activePlayers;
-	}
-	
 	// Create and add a new player only if another player with the same name does not already exist in the game
-	public PlayerStatus addPlayer(String playerName) {
+	public PlayerActionResult addPlayer(String playerId) {
 		// Determine if we can take the action
 		if(gameStatus != GameStatus.INITIALIZING) {
 			// Cannot add players after game has started
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot add any players after game has started");
-		}else if(getPlayer(playerName) != null) {
+		}else if(getPlayer(playerId) != null) {
 			// Cannot duplicate players
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED, 
-					"Cannot create a player with name " + playerName + " since one already exists in the game"); 			
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED, 
+					"Cannot create a player with name " + playerId + " since one already exists in the game"); 			
 		}else if(players.size() >= MAX_PLAYERS){
 			// Too many players already
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Already reached max number of players " + MAX_PLAYERS + ", cannot add any more");
 		}else {
 			// Add if that player does not exist yet
-			Player newPlayer = new Player(playerName);
+			Player newPlayer = new Player(playerId);
 			players.add(newPlayer);
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
-					"Player " + playerName + " has joined the game");
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+					"Player " + playerId + " has joined the game");
 		}
 	}
 	
 	// Remove a player by name
-	public PlayerStatus removePlayer(String playerName) {
+	public PlayerActionResult removePlayer(String playerId) {
 		// Determine if we can take the action
 		if(gameStatus != GameStatus.INITIALIZING) {
 			// Cannot add players after game has started
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot remove any players after game has started");
 		}
 		
 		// Find the player
 		int removeIdx = -1;
 		for(int i=0; i<players.size(); i++) {
-			if(players.get(i).getPlayerName().equals(playerName)) {
+			if(players.get(i).getPlayerName().equals(playerId)) {
 				removeIdx = i;
 				break;
 			}
@@ -378,36 +511,41 @@ public class Game {
 						
 			// Remove player from game
 			players.remove(removeIdx);
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
-				"Player " + playerName + " has left the game");
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+				"Player " + playerId + " has left the game");
 		}else {
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-					"Cannot remove player " + playerName + " since no such player exists in the game");
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot remove player " + playerId + " since no such player exists in the game");
 		}	
 	}
 	
 	// Assign token
-	public PlayerStatus assignToken(String playerName, String tokenName) {
+	public PlayerActionResult assignToken(String playerId, String tokenName) {
 		// Determine if we can take this action
 		if(gameStatus != GameStatus.INITIALIZING ) {
 			// Cannot assign token after game has started
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot assign tokens after game has started");
 		}
 		
 		// Get the player
-		Player p = getPlayer(playerName);
+		Player p = getPlayer(playerId);
 		if(p == null) {
 			// No player found
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-					"Cannot assign token to player " + playerName + " since no such player exists in the game");
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot assign token to player " + playerId + " since no such player exists in the game");
 		}
 		
 		// See if player already has a token
 		if(p.hasToken()) {
 			// Cannot get another token
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-					"Player " + playerName + " already has a token, must discard the token first before selecting a new one");
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Player " + playerId + " already has a token, must discard the token first before selecting a new one");
 		}
 		
 		// Get the token
@@ -418,36 +556,41 @@ public class Game {
 				if(t.getAvailable()) {
 					// Token is available, grab it
 					p.assignToken(t);
-					return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
-							"Player " + playerName + " has been assigned the token " + tokenName);
+					return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+							PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+							"Player " + playerId + " has been assigned the token " + tokenName);
 				}else {
 					// Token is not available
-					return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+					return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+							PlayerActionResult.ActionResultType.ACTION_REJECTED,
 							"The token " + tokenName + " is already taken by another player");
 				}
 			}
 		}
 		
 		// If we got here then no token was found
-		return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+		return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+				PlayerActionResult.ActionResultType.ACTION_REJECTED,
 				"The token " + tokenName + " does not exist");
 	}
 	
 	// Discard token
-	public PlayerStatus discardToken(String playerName) {
+	public PlayerActionResult discardToken(String playerId) {
 		// Determine if we can take this action
 		if(gameStatus != GameStatus.INITIALIZING ) {
 			// Cannot assign token after game has started
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot discard tokens after game has started");
 		}
 		
 		// Get the player
-		Player p = getPlayer(playerName);
+		Player p = getPlayer(playerId);
 		if(p == null) {
 			// No player found
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-					"Cannot discard token of player " + playerName + " since no such player exists in the game");
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Cannot discard token of player " + playerId + " since no such player exists in the game");
 		}
 		
 		// See if player already has a token
@@ -455,33 +598,21 @@ public class Game {
 			// Remove the token
 			Token t = p.getToken();
 			p.removeToken();
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_ACCEPTED,
-					"Player " + playerName + " has discarded the token " + t.getDisplayName());			
+			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+					"Player " + playerId + " has discarded the token " + t.getDisplayName());			
 		}else {
 			// Cannot discard a token that doesn't exist
-			return new PlayerStatus(PlayerStatus.PlayerStatusType.ACTION_REJECTED,
-					"Player " + playerName + " does not have a token to discard");
+			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
+					PlayerActionResult.ActionResultType.ACTION_REJECTED,
+					"Player " + playerId + " does not have a token to discard");
 		}
-	}
-	
-	// Get the set of available tokens to choose from
-	private List<Token> getAvailableTokens(){
-		List<Token> availableTokens = new ArrayList<Token>();
-		for(Token t : gameBoard.getTokens()) {
-			if(t.getAvailable()) {
-				availableTokens.add(t);
-			}
-		}
-		return availableTokens;
 	}
 	
 	// Takes existing room, token, and weapon cards
 	// Removes one from each to create a game solution and then
 	// deals the rest out randomly amongst players
 	private void createSolutionAndDealCards() {		
-		// Create random number generator
-		Random random = new Random(randomSeed);
-		
 		// Choose a solution randomly
 		int roomSolutionIdx = random.nextInt(roomCards.size());
 		int tokenSolutionIdx = random.nextInt(tokenCards.size());
@@ -523,60 +654,4 @@ public class Game {
 			}					
 		}
 	}
-	
-	/*public static void main(String[] args) {
-		Game g = new Game(0);
-		Player philip = g.addPlayer("Philip");
-		Player angel = g.addPlayer("Angel");
-		Player george = g.addPlayer("George");
-		
-		List<Token> gameTokens; 
-		gameTokens = g.getAvailableTokens();
-		System.out.println("Available tokens: " );
-		for(Token t : gameTokens) {
-			System.out.println(t.getDisplayName() + " at " + t.getLocationX() + "," + t.getLocationY());
-		}
-		Token tk = gameTokens.get(0);
-		System.out.println("Assigning " + tk.getDisplayName() + " to " + philip.getPlayerName());
-		philip.assignToken(tk);
-
-		tk = gameTokens.get(1);
-		System.out.println("Assigning " + tk.getDisplayName() + " to " + angel.getPlayerName());
-		angel.assignToken(tk);
-		
-		tk = gameTokens.get(2);
-		System.out.println("Assigning " + tk.getDisplayName() + " to " + philip.getPlayerName());
-		philip.assignToken(tk);
-		
-		tk = gameTokens.get(0);
-		System.out.println("Assigning " + tk.getDisplayName() + " to " + george.getPlayerName());		
-		george.assignToken(tk);
-		
-		System.out.println("Game can start : " + g.checkIfGameCanStart());
-		
-		g.startGame();
-		
-		Player turnPlayer = g.getTurnPlayer();
-		System.out.println("\n" + turnPlayer.getPlayerName() + " location: (" + turnPlayer.getToken().getLocationX() + "," + turnPlayer.getToken().getLocationY() + ")");
-				
-		System.out.println("\nValid move directions:");
-		Set<MoveDirection> validMoveDirections = g.getValidMoveDirections();
-		MoveDirection turnMoveDirection = null;
-		for(MoveDirection m : validMoveDirections) {
-			turnMoveDirection = m;
-			System.out.println(m);
-		}
-
-		System.out.println("\nMoving " + turnMoveDirection);
-		g.move(turnMoveDirection);
-		
-		System.out.println("\n" + turnPlayer.getPlayerName() + " location: (" + turnPlayer.getToken().getLocationX() + "," + turnPlayer.getToken().getLocationY() + ")");
-		
-		System.out.println("\nValid move directions:");
-		validMoveDirections = g.getValidMoveDirections();
-		for(MoveDirection m : validMoveDirections) {
-			System.out.println(m);
-		}
-		
-	}*/
 }

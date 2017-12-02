@@ -36,6 +36,16 @@ public class Weapon extends BoardPiece {
 		this.weaponId = weaponId;
 	}
 	
+	// Reverse lookup weapon ID by value
+	public static WeaponId getWeaponIdByValue(int id) {
+		for(WeaponId wid : WeaponId.values()) {
+			if(id == wid.getValue()) {
+				return wid;
+			}
+		}
+		return null;
+	}
+	
 	// Get methods
 	public WeaponId getWeaponId() {
 		return weaponId;
