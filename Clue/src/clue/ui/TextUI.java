@@ -1,12 +1,13 @@
-package clue.network;
+package clue.ui;
 
 import java.util.Scanner;
 
 import clue.action.PlayerAction;
 import clue.action.PlayerActionJoinGame;
+import clue.network.GameClientUI;
 import clue.result.GameResult;
 
-public class SampleClientUI implements GameClientUI {
+public class TextUI implements GameClientUI {
 
 	// Client state
 	protected enum ClientState{
@@ -20,7 +21,7 @@ public class SampleClientUI implements GameClientUI {
 	protected ClientState clientState;
 	
 	// Constructor
-	public SampleClientUI() {
+	public TextUI() {
 		
 		// Client should initially be connecting to server
 		clientState = ClientState.CONNECTING;
@@ -83,6 +84,6 @@ public class SampleClientUI implements GameClientUI {
 	// Main
 	public static void main(String[] args) {
 		// Create a new sample client UI
-		new SampleClientUI();
+		new TextUI();
 	}
 }
