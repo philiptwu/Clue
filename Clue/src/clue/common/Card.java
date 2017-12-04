@@ -29,6 +29,16 @@ public abstract class Card {
 		this.cardType = cardType;
 	}
 		
+	// Reverse lookup card type by value
+	public static CardType getCardTypeByValue(int id) {
+		for(CardType ct : CardType.values()) {
+			if(id == ct.getValue()) {
+				return ct;
+			}
+		}
+		return null;
+	}
+	
 	// Get methods
 	public CardType getCardType() {
 		return cardType;

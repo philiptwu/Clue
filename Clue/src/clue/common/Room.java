@@ -39,6 +39,16 @@ public class Room extends BoardLocation {
 		this.roomId = roomId;
 	}
 	
+	// Reverse lookup room ID by value
+	public static RoomId getRoomIdByValue(int id) {
+		for(RoomId rid : RoomId.values()) {
+			if(id == rid.getValue()) {
+				return rid;
+			}
+		}
+		return null;
+	}
+	
 	// Get methods
 	public RoomId getRoomId() {
 		return roomId;

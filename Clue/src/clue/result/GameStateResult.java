@@ -10,10 +10,13 @@ import clue.common.Game;
 import clue.common.Game.GameStatus;
 import clue.common.GameBoard.MoveDirection;
 import clue.common.Player;
+import clue.common.Room;
 import clue.common.RoomCard;
 import clue.common.Token;
+import clue.common.Token.TokenId;
 import clue.common.TokenCard;
 import clue.common.Weapon;
+import clue.common.Weapon.WeaponId;
 import clue.common.WeaponCard;
 
 public class GameStateResult extends GameResult {
@@ -122,5 +125,101 @@ public class GameStateResult extends GameResult {
 		for(MoveDirection md : game.getValidMoveDirections(playerId)) {
 			moveDirectionValid[md.getValue()] = true;
 		}
-	}		
+	}
+	
+	// String representation of game state
+	public String toString() {
+		String str = new String();
+		
+		// Game basic information
+		str += "Game Status: " + gameStatus.toString() + "\n";
+		
+		// Weapons
+		str += "Weapons:\n";
+		for(int i=0; i<6; i++) {
+			WeaponId wid = Weapon.getWeaponIdByValue(i);
+			str += "  " + wid.getDefaultName() + ", Location = (" + weaponLocationX[i] + "," + weaponLocationY[i] + ")\n";
+		}
+		
+		// Tokens
+		str += "Tokens:\n";
+		for(int i=0; i<6; i++) {
+			TokenId tid = Token.getTokenIdByValue(i);
+			if(gameStatus == GameStatus.INITIALIZING) {
+				// Game is initializing, we care about whether a token is available
+				str += "  " + tid.getDefaultName() + ", Location = (" + tokenLocationX[i] + "," + tokenLocationY[i] + "), Available = " + tokenAvailable[i] + "\n";
+			}else {
+				// Game is playing or done, don't care if token is available
+				str += "  " + tid.getDefaultName() + ", Location = (" + tokenLocationX[i] + "," + tokenLocationY[i] + ")\n";
+			}
+		}
+				
+		// Players
+		str += "Players:\n";
+		int numPlayers = playerIds.size();
+		for(int i=0; i<numPlayers; i++) {
+			// We will always want the player name
+			String playerId = playerIds.get(i);
+			
+			// We also always want to know which token
+			int playerToken = playerTokenAssociation.get(i);
+			String tokenId = (playerToken >= 0) ? Token.getTokenIdByValue(playerToken).getDefaultName() : "None";
+			
+			// Create the appropriate output string
+			if(gameStatus == GameStatus.INITIALIZING) {
+				// Still initializing, status and turn does not matter
+				str += "  " + playerId + ", Token = " + tokenId + ", Voted = " + playerVoted.get(i) + "\n";
+			}else if(gameStatus == GameStatus.PLAYING) {				
+				// No one won yet
+				String status = null;
+				if(playerActive.get(i)) {
+					// Active
+					if(i == turnPlayerIdx) {
+						status = "Turn";
+					}else {
+						status = "Not Turn";
+					}
+				}else {
+					// All inactive players are losers
+					status = "Loser";
+				}
+				str += "  " + playerId + ", Token = " + tokenId + ", Status = " + status + "\n";
+			}else {
+				// Someone won, everyone who is not the winner is a loser
+				String status = (i == winnerIdx) ? "Winner" : "Loser";				
+				str += "  " + playerId + ", Token = " + tokenId + ", Status = " + status + "\n";
+			}
+		}
+		
+		// Player specific
+		str += "Current Player:\n";
+		if(gameStatus == GameStatus.INITIALIZING) {
+			// Players have no cards when initializing
+			str += "  " + playerId + ", Cards = None\n";			
+		}else {
+			// Players have cards if game is past initializing
+			str += "  " + playerId + ", Cards = ";
+			for(int i=0; i<playerCardTypes.size(); i++) {
+				if(i > 0) {
+					str += ", ";
+				}
+				CardType ct = Card.getCardTypeByValue(playerCardTypes.get(i));
+				switch(ct) {
+				case ROOM:
+					str += Room.getRoomIdByValue(playerCardIds.get(i)).getDefaultName() + " (Room)";
+					break;
+				case TOKEN:
+					str += Token.getTokenIdByValue(playerCardIds.get(i)).getDefaultName() + " (Token)";					
+					break;
+				case WEAPON:
+					str += Weapon.getWeaponIdByValue(playerCardIds.get(i)).getDefaultName() + " (Weapon)";										
+					break;
+				}
+			}
+			str += "\n";
+		}
+		
+		// Return the created string
+		return str;
+	}
 }
