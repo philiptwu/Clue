@@ -1,7 +1,10 @@
 package clue.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
+import clue.action.PlayerAction.PlayerActionType;
 import clue.action.PlayerActionJoinGame;
 import clue.network.GameClient;
 import clue.result.GameResult;
@@ -54,7 +57,7 @@ public class TextUI{
 			// Prompt user for a player ID
 			System.out.println("Enter a player ID to connect to the server with:");
 			Scanner scanner = new Scanner(System.in); 
-			playerId = scanner. nextLine();
+			playerId = scanner.nextLine();
 			scanner.close();
 			
 			// Connect to server, this step is omitted for now as networking code is still being written
@@ -109,11 +112,71 @@ public class TextUI{
 				// Display the new game state
 				displayGameState(gameStateResult);
 				
+				// Accept any user input
+				acceptUserInput(gameStateResult);
 				break;
 			}
 		}
 	}
 	
+	// Gets user input and sends player action
+	synchronized public void acceptUserInput(GameStateResult gameStateResult) {
+		// Nothing to do if player has no actions to take
+		if(gameStateResult.validActions.isEmpty()) {
+			return;
+		}
+		
+		// Create a new scanner
+		Scanner scanner = new Scanner(System.in); 
+		
+		// There is at least one action that the player can take, show the options
+		List<String> actionMenuOptions = new ArrayList<String>();
+		for(PlayerActionType pat : gameStateResult.validActions) {
+			actionMenuOptions.add(pat.toString());
+		}
+		int actionSelectionIdx = getNumberMenu(scanner,"Input an Action Number:",actionMenuOptions);
+		
+		// Follow up on which action was selected
+		PlayerActionType selectedActionType = gameStateResult.validActions.get(actionSelectionIdx);
+		//CONTINUE HERE
+	}
+	
+	// Display a numerical menu to the user and get input
+	private synchronized int getNumberMenu(Scanner scanner, String header, List<String> menuOptions) {
+		while(true) {
+			// Display header
+			System.out.println(header);
+			
+			// Display menu
+			int numOptions = menuOptions.size();
+			for(int i=1; i<=numOptions; i++) {
+				System.out.println(i + ") " + menuOptions.get(i));
+			}
+			
+			// Get input
+			try {
+				// Parse the integer, a NumberFormatException will be thrown if it is not valid
+				int actionSelection = Integer.parseInt(scanner.nextLine());
+
+				// Check input validity
+				if(actionSelection < 1) {
+					// Too small
+					System.err.println("Input must be >= 1, try again...\n");
+				}else if(actionSelection > numOptions) {
+					// Too large
+					System.err.println("Input must be <= " + numOptions + ", try again...\n");
+				}else {
+					// Just right
+					return (actionSelection-1);
+				}
+
+			}catch(NumberFormatException e) {
+				// Invalid number
+				System.err.println("Input is not a valid number, try again...\n");
+			}
+		}
+	}
+ 	
 	// Main
 	public static void main(String[] args) {
 		// Create a new sample client UI
