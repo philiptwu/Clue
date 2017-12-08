@@ -4,8 +4,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import clue.action.PlayerAction;
 import clue.action.PlayerAction.PlayerActionType;
+import clue.action.PlayerActionChooseToken;
+import clue.action.PlayerActionDiscardToken;
+import clue.action.PlayerActionEndTurn;
 import clue.action.PlayerActionJoinGame;
+import clue.action.PlayerActionLeaveGame;
+import clue.action.PlayerActionMakeAccusation;
+import clue.action.PlayerActionMove;
+import clue.action.PlayerActionVoteStartGame;
+import clue.common.GameBoard;
+import clue.common.Room;
+import clue.common.GameBoard.MoveDirection;
+import clue.common.Room.RoomId;
+import clue.common.Token;
+import clue.common.Token.TokenId;
+import clue.common.Weapon;
+import clue.common.Weapon.WeaponId;
 import clue.network.GameClient;
 import clue.result.GameResult;
 import clue.result.GameStateResult;
@@ -138,7 +154,129 @@ public class TextUI{
 		
 		// Follow up on which action was selected
 		PlayerActionType selectedActionType = gameStateResult.validActions.get(actionSelectionIdx);
-		//CONTINUE HERE
+		
+		// Follow up on which action was selected
+		PlayerAction actionToSend = null;
+		switch(selectedActionType) {
+		case JOIN_GAME:
+		{
+			// Join a game (this should not be used)
+			actionToSend = new PlayerActionJoinGame(playerId);
+			break;
+		}
+		case LEAVE_GAME:
+		{
+			// Leave the current game
+			actionToSend = new PlayerActionLeaveGame(playerId);
+			break;
+		}
+		case CHOOSE_TOKEN:
+		{
+			// Choose from one of the available tokens
+			List<String> tokenMenuOptions = new ArrayList<String>();
+			for(int i=0; i<TokenId.values().length; i++) {
+				if(gameStateResult.tokenAvailable[i]) {
+					TokenId ti = Token.getTokenIdByValue(i);
+					tokenMenuOptions.add(ti.getDefaultName());
+				}
+			}
+			int tokenSelectionIdx = getNumberMenu(scanner,"Input a Token Selection Number:",tokenMenuOptions);
+			actionToSend = new PlayerActionChooseToken(playerId,tokenMenuOptions.get(tokenSelectionIdx));
+			break;
+		}
+		case DISCARD_TOKEN:
+		{
+			// Discard token
+			actionToSend = new PlayerActionDiscardToken(playerId);
+			break;
+		}
+		case VOTE_START_GAME:
+		{
+			// Vote to start the game
+			actionToSend = new PlayerActionVoteStartGame(playerId);
+			break;
+		}
+		case MOVE:
+		{
+			// Move the token
+			// First show list of valid moves
+			List<String> moveMenuOptions = new ArrayList<String>();
+			List<MoveDirection> moveMenuDirections = new ArrayList<MoveDirection>();
+			for(int i=0; i<MoveDirection.values().length; i++) {
+				if(gameStateResult.moveDirectionValid[i]) {
+					MoveDirection md = GameBoard.getMoveDirectionByValue(i);
+					moveMenuOptions.add(md.toString());
+					moveMenuDirections.add(md);
+				}
+			}
+			int moveSelectionIdx = getNumberMenu(scanner,"Input a Move Direction Number:",moveMenuOptions);
+			MoveDirection selectedMoveDirection = moveMenuDirections.get(moveSelectionIdx);
+			
+			// Send the action
+			actionToSend = new PlayerActionMove(playerId, selectedMoveDirection);
+			break;
+		}
+		case MAKE_SUGGESTION:
+		{
+			// Make a suggestion
+			System.err.println("Make Accusation action is currently unsupported");
+			break;
+		}
+		case SHOW_CARD:
+		{
+			// Show a card (in response to a suggestion)
+			System.err.println("Show Card action is currently unsupported");
+			break;
+		}
+		case MAKE_ACCUSATION:
+		{
+			// Make an accusation
+			// First choose a room
+			List<String> roomMenuOptions = new ArrayList<String>();
+			for(RoomId ri : RoomId.values()) {
+				roomMenuOptions.add(ri.getDefaultName());
+			}
+			int roomSelectionIdx = getNumberMenu(scanner,"Input a Room Selection Number:",roomMenuOptions);
+			// Next choose a token
+			List<String> tokenMenuOptions = new ArrayList<String>();
+			for(TokenId ti : TokenId.values()) {
+				tokenMenuOptions.add(ti.getDefaultName());
+			}
+			int tokenSelectionIdx = getNumberMenu(scanner,"Input a Token Selection Number:",tokenMenuOptions);
+			// Finally choose a weapon
+			List<String> weaponMenuOptions = new ArrayList<String>();
+			for(WeaponId wi : WeaponId.values()) {
+				weaponMenuOptions.add(wi.getDefaultName());
+			}
+			int weaponSelectionIdx = getNumberMenu(scanner,"Input a Weapon Selection Number:",weaponMenuOptions);
+			// Create the action
+			actionToSend = new PlayerActionMakeAccusation(playerId,
+					Room.getRoomIdByValue(roomSelectionIdx).getDefaultName(),
+					Token.getTokenIdByValue(tokenSelectionIdx).getDefaultName(),
+					Weapon.getWeaponIdByValue(weaponSelectionIdx).getDefaultName());			
+			break;
+		}
+		case END_TURN:
+		{
+			// End turn
+			actionToSend = new PlayerActionEndTurn(playerId);
+			break;
+		}
+		default:
+		{
+			// Unrecognized action type
+			System.err.println("Player selected an unsupported action type " + selectedActionType.toString());
+			return;
+		}
+		}
+		
+		// Send the selected action
+		sendPlayerAction(actionToSend);
+	}
+	
+	// Sends the player action via the server
+	private synchronized void sendPlayerAction(PlayerAction pa) {
+		//TODO: CONTINUE HERE!!!
 	}
 	
 	// Display a numerical menu to the user and get input
