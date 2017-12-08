@@ -20,7 +20,7 @@ import clue.result.GameStateResult;
 import clue.result.PlayerActionResult.ActionResultType;
 import clue.action.PlayerActionVoteStartGame;
 
-public class GameEngine {
+public class GameEngine implements Runnable {
 	// Member variables
 	protected Game game;
 	protected ResultConsumer gameResultConsumer;
@@ -33,8 +33,14 @@ public class GameEngine {
 		this.playerActionQueue = new ConcurrentLinkedQueue<PlayerAction>();
 	}
 	
+	// Enqueue a new player action to be handled
+	public synchronized void enqueuePlayerAction(PlayerAction pa) {
+		playerActionQueue.add(pa);
+	}
+	
 	// Run the engine
-	public void runEngine() {
+	@Override
+	public void run() {
 		// Infinite loop
 		PlayerAction currPlayerAction = null;
 		while(true) {

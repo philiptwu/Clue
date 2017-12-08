@@ -1,6 +1,11 @@
 package clue.result;
 
 public class PlayerActionResult extends GameResult {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8903927479310790002L;
+
 	public enum ActionResultType{
 		ACTION_ACCEPTED(0,"Action Accepted"),
 		ACTION_REJECTED(1,"Action Rejected");

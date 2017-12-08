@@ -14,4 +14,9 @@ public class GameClient {
 	public void sendPlayerAction(PlayerAction playerAction) {
 		
 	}
+	
+	// Main
+	public static void main(String[] args) {
+		
+	}
 }

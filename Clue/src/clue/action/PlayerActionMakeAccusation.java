@@ -1,6 +1,10 @@
 package clue.action;
 
 public class PlayerActionMakeAccusation extends PlayerAction {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7131959867427521090L;
 	// Member variables
 	protected String roomId;
 	protected String tokenId;

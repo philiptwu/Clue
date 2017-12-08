@@ -3,6 +3,10 @@ package clue.action;
 import clue.common.GameBoard.MoveDirection;
 
 public class PlayerActionMove extends PlayerAction {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2312159863061803508L;
 	// Member variables
 	MoveDirection moveDirection;
 	

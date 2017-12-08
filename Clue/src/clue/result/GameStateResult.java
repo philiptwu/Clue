@@ -20,6 +20,10 @@ import clue.common.Weapon.WeaponId;
 import clue.common.WeaponCard;
 
 public class GameStateResult extends GameResult {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3719047721815744892L;
 	// Common member variables
 	protected String gameId;
 	public int turnPlayerIdx;
