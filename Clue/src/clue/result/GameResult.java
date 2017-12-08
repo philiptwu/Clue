@@ -1,6 +1,12 @@
 package clue.result;
 
-public abstract class GameResult {
+import java.io.Serializable;
+
+public abstract class GameResult implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8087787907305037542L;
 	public enum GameResultType{
 		PLAYER_ACTION_RESULT(0,"Player Action Result"),
 		GAME_STATE_RESULT(1,"Game State Result");

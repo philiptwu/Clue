@@ -1,6 +1,13 @@
 package clue.action;
 
-public abstract class PlayerAction {
+import java.io.Serializable;
+
+public abstract class PlayerAction implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 2439386925456801757L;
+
 	public enum PlayerActionType{
 		JOIN_GAME(0,"Join Game"),
 		LEAVE_GAME(1,"Leave Game"),

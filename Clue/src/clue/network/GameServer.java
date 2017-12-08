@@ -21,4 +21,6 @@ public class GameServer implements ResultConsumer {
 		// TODO Auto-generated method stub
 		
 	}
+
+
 }
