@@ -18,7 +18,10 @@ public class GameServer implements ResultConsumer {
 	
 	// Constructor
 	@SuppressWarnings("resource")
-	public GameServer() {		
+	public GameServer() {
+		// Debug output
+		System.out.println("Starting game server...");
+		
 		// List of game server workers
 		gameServerWorkers = new ArrayList<GameServerWorker>();
 		
@@ -39,6 +42,7 @@ public class GameServer implements ResultConsumer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+		System.out.println("Game server started!");
         
         // Infinite loop
         while (true) {
@@ -73,7 +77,6 @@ public class GameServer implements ResultConsumer {
 	
 	// Main function
 	public static void main(String[] args) {
-		System.out.println("Starting game server...");
 		new GameServer();
 	}
 }

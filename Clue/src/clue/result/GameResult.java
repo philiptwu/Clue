@@ -51,5 +51,8 @@ public abstract class GameResult implements Serializable{
 	public String getPlayerId() {
 		return playerId;
 	}
+	public GameResultCommunicationType getGameResultCommunicationType() {
+		return gameResultCommunicationType;
+	}
 	
 }

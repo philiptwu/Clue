@@ -24,11 +24,14 @@ import clue.common.Weapon;
 import clue.common.Weapon.WeaponId;
 import clue.network.GameClient;
 import clue.result.GameResult;
+import clue.result.GameResult.GameResultCommunicationType;
+import clue.result.GameResult.GameResultType;
 import clue.result.GameStateResult;
 import clue.result.PlayerActionResult;
 import clue.result.PlayerActionResult.ActionResultType;
+import clue.result.ResultConsumer;
 
-public class TextUI{
+public class TextUI implements ResultConsumer{
 
 	// Client state
 	protected enum ClientState{
@@ -44,23 +47,26 @@ public class TextUI{
 	protected GameStateResult gameStateResult;
 	
 	// Constructor
-	public TextUI() {
-		// Create a new client
-		gameClient = new GameClient();
-		
+	public TextUI() {		
 		// No latest game state
 		gameStateResult = null;
 		
 		// Client should initially be connecting to server
 		clientState = ClientState.UNCONNECTED;
 		
-		// Connect to the server and game
-		connect();
+		// Create a new client and connect to the server
+		gameClient = new GameClient(this);
+		
+		// Start the game client to receive all incoming GameResult messages
+		new Thread(gameClient).start();
+
+		// Join a game
+		joinGame();
 		
 		// Infinite loop
 		while(true) {
 			try {
-			Thread.sleep(1000);
+			Thread.sleep(10000);
 			}catch(Exception e) {
 				
 			}
@@ -68,16 +74,15 @@ public class TextUI{
 	}
 	
 	// Evaluates the client state machine to decide what to do 
-	synchronized private void connect() {
+	synchronized private void joinGame() {
 		if(clientState == ClientState.UNCONNECTED) {
+			
+			
 			// Prompt user for a player ID
-			System.out.println("Enter a player ID to connect to the server with:");
+			System.out.println("Enter a player ID to join game with:");
 			Scanner scanner = new Scanner(System.in); 
 			playerId = scanner.nextLine();
 			scanner.close();
-			
-			// Connect to server, this step is omitted for now as networking code is still being written
-			System.out.println("Successfully connected to server using player ID " + playerId);
 			
 			// Send request to join game
 			PlayerActionJoinGame actionJoinGame = new PlayerActionJoinGame(playerId);
@@ -96,7 +101,39 @@ public class TextUI{
 	}
 
 	// Called by client 
-	synchronized public void handleGameResult(GameResult gameResult) {
+	@Override
+	synchronized public void acceptGameResult(String gameId, GameResult gameResult) {
+		// Filter the message
+		switch(clientState) {
+		case UNCONNECTED:
+		{
+			// We didn't even connect yet, this game result is not for us
+			return;			
+		}
+		case JOIN_REQUEST_SENT:
+		{
+			// Make sure it is a directed palyer action result meant for us
+			if(gameResult.getGameResultType() == GameResultType.PLAYER_ACTION_RESULT && 
+			gameResult.getGameResultCommunicationType() == GameResultCommunicationType.DIRECTED && 
+			gameResult.getPlayerId().equals(playerId)) {
+				// DO nothing
+			}else {
+				// We sent a join request, only care about player action results for us
+				return;
+			}
+		}
+		case JOINED_GAME:
+		{
+			if(gameResult.getGameResultCommunicationType() == GameResultCommunicationType.BROADCAST || 
+					gameResult.getPlayerId().equals(playerId)) {
+				// DO nothing
+			}else {
+				// Not for us, filter it out
+				return;
+			}
+		}
+		}
+		
 		switch(gameResult.getGameResultType()){
 			case PLAYER_ACTION_RESULT:
 			{
@@ -112,7 +149,7 @@ public class TextUI{
 					// If we got a rejection after sending a join request, then it failed so try again
 					if(clientState == ClientState.JOIN_REQUEST_SENT) {
 						clientState = ClientState.UNCONNECTED;
-						connect();
+						joinGame();
 					}
 				}
 				break;
@@ -271,16 +308,11 @@ public class TextUI{
 		}
 		
 		// Send the selected action
-		sendPlayerAction(actionToSend);
+		gameClient.sendPlayerAction(actionToSend);
 	}
-	
-	// Sends the player action via the server
-	private synchronized void sendPlayerAction(PlayerAction pa) {
-		//TODO: CONTINUE HERE!!!
-	}
-	
+		
 	// Display a numerical menu to the user and get input
-	private synchronized int getNumberMenu(Scanner scanner, String header, List<String> menuOptions) {
+	synchronized private int getNumberMenu(Scanner scanner, String header, List<String> menuOptions) {
 		while(true) {
 			// Display header
 			System.out.println(header);
@@ -314,7 +346,7 @@ public class TextUI{
 			}
 		}
 	}
- 	
+	
 	// Main
 	public static void main(String[] args) {
 		// Create a new sample client UI

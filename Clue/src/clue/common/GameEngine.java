@@ -50,7 +50,7 @@ public class GameEngine implements Runnable {
 				if(currPlayerAction == null) {
 					// Sleep for a second and try again
 					try {
-					Thread.sleep(1000);
+					Thread.sleep(500);
 					}catch(Exception e) {}
 				}else {
 					break;
