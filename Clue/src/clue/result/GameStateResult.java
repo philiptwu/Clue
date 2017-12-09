@@ -126,8 +126,10 @@ public class GameStateResult extends GameResult {
 		validActions = new ArrayList<PlayerActionType>(game.getValidPlayerActions(playerId));
 		
 		// Valid move directions
+		moveDirectionValid = new boolean[5];
 		for(MoveDirection md : game.getValidMoveDirections(playerId)) {
-			moveDirectionValid[md.getValue()] = true;
+			int moveDirectionIdx = md.getValue();
+			moveDirectionValid[moveDirectionIdx] = true;
 		}
 	}
 	

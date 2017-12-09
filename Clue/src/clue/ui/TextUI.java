@@ -45,6 +45,7 @@ public class TextUI implements ResultConsumer{
 	protected ClientState clientState;
 	protected GameClient gameClient;
 	protected GameStateResult gameStateResult;
+	protected Scanner scanner;
 	
 	// Constructor
 	public TextUI() {		
@@ -53,6 +54,9 @@ public class TextUI implements ResultConsumer{
 		
 		// Client should initially be connecting to server
 		clientState = ClientState.UNCONNECTED;
+		
+		// Open a scanner
+		scanner = new Scanner(System.in); 
 		
 		// Create a new client and connect to the server
 		gameClient = new GameClient(this);
@@ -80,9 +84,7 @@ public class TextUI implements ResultConsumer{
 			
 			// Prompt user for a player ID
 			System.out.println("Enter a player ID to join game with:");
-			Scanner scanner = new Scanner(System.in); 
 			playerId = scanner.nextLine();
-			scanner.close();
 			
 			// Send request to join game
 			PlayerActionJoinGame actionJoinGame = new PlayerActionJoinGame(playerId);
@@ -112,10 +114,9 @@ public class TextUI implements ResultConsumer{
 		}
 		case JOIN_REQUEST_SENT:
 		{
-			// Make sure it is a directed palyer action result meant for us
-			if(gameResult.getGameResultType() == GameResultType.PLAYER_ACTION_RESULT && 
-			gameResult.getGameResultCommunicationType() == GameResultCommunicationType.DIRECTED && 
-			gameResult.getPlayerId().equals(playerId)) {
+			// Make sure it is a directed player action result meant for us
+			if(gameResult.getGameResultCommunicationType() == GameResultCommunicationType.BROADCAST || 
+					gameResult.getPlayerId().equals(playerId)) {
 				// DO nothing
 			}else {
 				// We sent a join request, only care about player action results for us
@@ -155,9 +156,22 @@ public class TextUI implements ResultConsumer{
 				break;
 			}
 			case GAME_STATE_RESULT:
-			{
+			{				
 				// If we are getting game states then we are connected
-				clientState = ClientState.JOINED_GAME;
+				if(clientState == ClientState.JOIN_REQUEST_SENT) {
+					// Look for game state result with player's name
+					for(String pid : ((GameStateResult)gameResult).playerIds) {
+						if(playerId.equals(pid)) {
+							clientState = ClientState.JOINED_GAME;
+							break;
+						}
+					}
+					
+					// Don't show the game state if we haven't joined yet
+					if(clientState != ClientState.JOINED_GAME) {
+						return;
+					}
+				}
 
 				// Save the latest game state result and indicate that display should be updated
 				gameStateResult = (GameStateResult)gameResult;
@@ -187,7 +201,7 @@ public class TextUI implements ResultConsumer{
 		for(PlayerActionType pat : gameStateResult.validActions) {
 			actionMenuOptions.add(pat.toString());
 		}
-		int actionSelectionIdx = getNumberMenu(scanner,"Input an Action Number:",actionMenuOptions);
+		int actionSelectionIdx = getNumberMenu(scanner,"Available Actions...",actionMenuOptions);
 		
 		// Follow up on which action was selected
 		PlayerActionType selectedActionType = gameStateResult.validActions.get(actionSelectionIdx);
@@ -217,7 +231,7 @@ public class TextUI implements ResultConsumer{
 					tokenMenuOptions.add(ti.getDefaultName());
 				}
 			}
-			int tokenSelectionIdx = getNumberMenu(scanner,"Input a Token Selection Number:",tokenMenuOptions);
+			int tokenSelectionIdx = getNumberMenu(scanner,"Available Tokens...",tokenMenuOptions);
 			actionToSend = new PlayerActionChooseToken(playerId,tokenMenuOptions.get(tokenSelectionIdx));
 			break;
 		}
@@ -246,7 +260,7 @@ public class TextUI implements ResultConsumer{
 					moveMenuDirections.add(md);
 				}
 			}
-			int moveSelectionIdx = getNumberMenu(scanner,"Input a Move Direction Number:",moveMenuOptions);
+			int moveSelectionIdx = getNumberMenu(scanner,"Available Move Directions...",moveMenuOptions);
 			MoveDirection selectedMoveDirection = moveMenuDirections.get(moveSelectionIdx);
 			
 			// Send the action
@@ -273,19 +287,19 @@ public class TextUI implements ResultConsumer{
 			for(RoomId ri : RoomId.values()) {
 				roomMenuOptions.add(ri.getDefaultName());
 			}
-			int roomSelectionIdx = getNumberMenu(scanner,"Input a Room Selection Number:",roomMenuOptions);
+			int roomSelectionIdx = getNumberMenu(scanner,"Available Rooms...",roomMenuOptions);
 			// Next choose a token
 			List<String> tokenMenuOptions = new ArrayList<String>();
 			for(TokenId ti : TokenId.values()) {
 				tokenMenuOptions.add(ti.getDefaultName());
 			}
-			int tokenSelectionIdx = getNumberMenu(scanner,"Input a Token Selection Number:",tokenMenuOptions);
+			int tokenSelectionIdx = getNumberMenu(scanner,"Available Tokens...",tokenMenuOptions);
 			// Finally choose a weapon
 			List<String> weaponMenuOptions = new ArrayList<String>();
 			for(WeaponId wi : WeaponId.values()) {
 				weaponMenuOptions.add(wi.getDefaultName());
 			}
-			int weaponSelectionIdx = getNumberMenu(scanner,"Input a Weapon Selection Number:",weaponMenuOptions);
+			int weaponSelectionIdx = getNumberMenu(scanner,"Available Weapons...",weaponMenuOptions);
 			// Create the action
 			actionToSend = new PlayerActionMakeAccusation(playerId,
 					Room.getRoomIdByValue(roomSelectionIdx).getDefaultName(),
@@ -320,13 +334,15 @@ public class TextUI implements ResultConsumer{
 			// Display menu
 			int numOptions = menuOptions.size();
 			for(int i=1; i<=numOptions; i++) {
-				System.out.println(i + ") " + menuOptions.get(i));
+				System.out.println(i + ") " + menuOptions.get(i-1));
 			}
+			System.out.println("Make a selection: ");
 			
 			// Get input
 			try {
 				// Parse the integer, a NumberFormatException will be thrown if it is not valid
-				int actionSelection = Integer.parseInt(scanner.nextLine());
+				String scannerLine = scanner.nextLine();
+				int actionSelection = Integer.parseInt(scannerLine);
 
 				// Check input validity
 				if(actionSelection < 1) {

@@ -85,7 +85,7 @@ public class GameEngine implements Runnable {
 			for(Player p : game.players) {
 				gameResultConsumer.acceptGameResult(game.getGameId(), new GameStateResult(p.getPlayerName(),game));
 			}
-		}		
+		}
 	}
 	
 	// Process a player action

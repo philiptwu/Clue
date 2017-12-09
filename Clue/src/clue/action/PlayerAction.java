@@ -13,7 +13,7 @@ public abstract class PlayerAction implements Serializable {
 		LEAVE_GAME(1,"Leave Game"),
 		CHOOSE_TOKEN(2,"Choose Token"),
 		DISCARD_TOKEN(3,"Discard Token"),
-		VOTE_START_GAME(4,"Start Game"),
+		VOTE_START_GAME(4,"Vote Start Game"),
 		MOVE(5,"Move"),
 		MAKE_SUGGESTION(6,"Make Suggestion"),
 		SHOW_CARD(7,"Show Card"),

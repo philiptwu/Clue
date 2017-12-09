@@ -53,20 +53,6 @@ public class GameClient implements Runnable {
 		}
 		System.out.println("Connected to game server!");
 		
-		// Get streams for reading
-		InputStream iStream = null;
-		try {
-			iStream = socket.getInputStream();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		oiStream = null;
-		try {
-			oiStream = new ObjectInputStream(iStream);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
 		// Get streams for writing
 		OutputStream oStream = null;
 		try {
@@ -80,6 +66,20 @@ public class GameClient implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		// Get streams for reading
+		InputStream iStream = null;
+		try {
+			iStream = socket.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		oiStream = null;
+		try {
+			oiStream = new ObjectInputStream(iStream);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}		
 	}
 	
 	// Sends a player action to the client

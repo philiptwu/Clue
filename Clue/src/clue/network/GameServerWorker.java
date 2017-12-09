@@ -22,20 +22,6 @@ public class GameServerWorker implements Runnable {
 		// Save references
 		this.gameServer = gameServer;
 		
-		// Get streams for reading
-		InputStream iStream = null;
-		try {
-			iStream = socket.getInputStream();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		oiStream = null;
-		try {
-			oiStream = new ObjectInputStream(iStream);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
 		// Get streams for writing
 		OutputStream oStream = null;
 		try {
@@ -49,6 +35,20 @@ public class GameServerWorker implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		// Get streams for reading
+		InputStream iStream = null;
+		try {
+			iStream = socket.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}		
+		oiStream = null;
+		try {
+			oiStream = new ObjectInputStream(iStream);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}	
 	}
 	
 	// Sends a game result to the client

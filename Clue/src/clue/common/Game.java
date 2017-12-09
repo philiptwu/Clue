@@ -250,10 +250,9 @@ public class Game {
 	
 	// Get the set of valid move directions
 	public List<MoveDirection> getValidMoveDirections(String playerId) {
-		Player turnPlayer = players.get(turnPlayerIdx);
-		if(gameStatus == GameStatus.PLAYING && turnPlayer.getPlayerName().equals(playerId) && !turnPlayerMoved) {
+		if(gameStatus == GameStatus.PLAYING && players.get(turnPlayerIdx).getPlayerName().equals(playerId) && !turnPlayerMoved) {
 			// Move directions only if game is in session, is current player's turn, and player has not moved yet
-			Token t = turnPlayer.getToken();
+			Token t = players.get(turnPlayerIdx).getToken();
 			return gameBoard.getMoveDirections(t);
 		}else {
 			// Otherwise player cannot move
@@ -288,6 +287,7 @@ public class Game {
 			// Move is valid
 			Token t = players.get(turnPlayerIdx).getToken();
 			gameBoard.moveToken(t,m);
+			turnPlayerMoved = true;
 			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
 					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
 				"Player " + playerId + " successfully moved in direction " + m.toString());
@@ -451,9 +451,31 @@ public class Game {
 			gameBoard.moveTokenToClosestRoom(loser.getToken());
 			endTurn(loser.getPlayerName());
 
-			return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
-					PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
-					"Accusation of " + accusation + " is incorrect, player " + playerId + " loses!");
+			// Determine if there are enough players for game to continue
+			int activeCount = 0;
+			int activeIdx = -1;
+			for(int i=0; i<players.size(); i++) {
+				if(players.get(i).getActive()) {
+					activeCount++;
+					activeIdx = i;
+				}
+			}
+			
+			// Return the correct message
+			if(activeCount == 1) {
+				// Only one player left, the accuser loses and whoever is left wins by default
+				gameStatus = GameStatus.FINISHED;
+				winnerIdx = activeIdx;
+				return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+						PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+						"Accusation of " + accusation + " is incorrect, player " + playerId + " loses and player " + 
+						players.get(activeIdx).getPlayerName() + " wins by default!");
+			}else {
+				// More than one player left, the accuser loses and the game continues
+				return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+						PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+						"Accusation of " + accusation + " is incorrect, player " + playerId + " loses!");
+			}
 		}
 	}
 	
