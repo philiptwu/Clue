@@ -189,6 +189,11 @@ public class GameJFrame extends javax.swing.JFrame {
     }
     
     public synchronized void setMoveDirectionButtons(List<MoveDirection> directions) {
+    	northButton.setEnabled(false);
+    	southButton.setEnabled(false);
+    	westButton.setEnabled(false);
+    	eastButton.setEnabled(false);
+    	secretButton.setEnabled(false);
     	for(MoveDirection md : directions) {
     		switch(md) {
     		case NORTH:

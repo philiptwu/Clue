@@ -790,6 +790,8 @@ public class Game {
 				tokenCards.get(tokenSolutionIdx).getTokenId(),
 				weaponCards.get(weaponSolutionIdx).getWeaponId());
 		
+		System.out.println("GAME SOLUTION: " + gameSolution);
+		
 		// Create a list of all the cards that weren't in the solution
 		List<Card> dealableCards = new ArrayList<Card>();
 		for(int i=0; i<roomCards.size(); i++) {
