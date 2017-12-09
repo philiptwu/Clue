@@ -1,18 +1,19 @@
 package clue.action;
 
-public class PlayerActionMakeAccusation extends PlayerAction {
+public class PlayerActionMakeSuggestion extends PlayerAction {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 7131959867427521090L;
+	private static final long serialVersionUID = -7520564531721589491L;
+	
 	// Member variables
 	protected String roomId;
 	protected String tokenId;
 	protected String weaponId;
 	
 	// Constructor
-	public PlayerActionMakeAccusation(String playerId, String roomId, String tokenId, String weaponId) {
-		super(playerId, PlayerActionType.MAKE_ACCUSATION);
+	public PlayerActionMakeSuggestion(String playerId, String roomId, String tokenId, String weaponId) {
+		super(playerId, PlayerActionType.MAKE_SUGGESTION);
 		this.roomId = roomId;
 		this.tokenId = tokenId;
 		this.weaponId = weaponId;
@@ -31,6 +32,6 @@ public class PlayerActionMakeAccusation extends PlayerAction {
 	
 	// Output
 	public String toString() {
-		return "Player " + playerId + " makes the accusation: " + tokenId + "with " + weaponId + " in the " + roomId;
+		return "Player " + playerId + " makes the suggestion: " + tokenId + "with " + weaponId + " in the " + roomId;
 	}
 }
