@@ -22,6 +22,7 @@ import clue.common.Token;
 import clue.common.Token.TokenId;
 import clue.common.Weapon;
 import clue.common.Weapon.WeaponId;
+import clue.gui.GameJFrame;
 import clue.network.GameClient;
 import clue.result.GameResult;
 import clue.result.GameResult.GameResultCommunicationType;
@@ -31,12 +32,8 @@ import clue.result.PlayerActionResult;
 import clue.result.PlayerActionResult.ActionResultType;
 import clue.result.ResultConsumer;
 
-public class TextUI implements ResultConsumer{
+public class GraphicalUI implements ResultConsumer{
 
-	// Constants
-	public static final String SERVER_ADDRESS = "localhost";
-	public static final int PORT = 2017;
-	
 	// Client state
 	protected enum ClientState{
 		UNCONNECTED,
@@ -47,61 +44,43 @@ public class TextUI implements ResultConsumer{
 	// Member variables
 	protected String playerId;
 	protected ClientState clientState;
-	protected GameClient gameClient;
-	protected GameStateResult gameStateResult;
-	protected Scanner scanner;
+	public GameClient gameClient;
+	public GameStateResult gameStateResult;
+	protected GameJFrame gameJFrame;
 	
 	// Constructor
-	public TextUI() {		
+	public GraphicalUI() {		
 		// No latest game state
 		gameStateResult = null;
 		
 		// Client should initially be connecting to server
 		clientState = ClientState.UNCONNECTED;
-		
-		// Open a scanner
-		scanner = new Scanner(System.in); 
-		
+
+		// Create a Game JFrame
+		gameJFrame = new GameJFrame(this);
+		gameJFrame.setVisible(true);
+	}
+	
+	public void connectToServer(String ipAddress, int port) {
 		// Create a new client and connect to the server
-		gameClient = new GameClient(this,SERVER_ADDRESS,PORT);
+		gameClient = new GameClient(this, ipAddress, port);
 		
 		// Start the game client to receive all incoming GameResult messages
 		new Thread(gameClient).start();
-
-		// Join a game
-		joinGame();
 		
-		// Infinite loop
-		while(true) {
-			try {
-			Thread.sleep(10000);
-			}catch(Exception e) {
-				
-			}
-		}
+		// Enable the join game panel
+		gameJFrame.toggleJoinGamePanel(true);
 	}
 	
-	@Override
-	public void printMessage(String message) {
-		System.out.println(message);
+	public String getPlayerId() {
+		return playerId;
 	}
-
-	@Override
-	public void printErrorMessage(String message) {
-		System.err.println(message);
-	}
-
-	
+		
 	// Evaluates the client state machine to decide what to do 
-	synchronized private void joinGame() {
-		if(clientState == ClientState.UNCONNECTED) {
-			
-			
-			// Prompt user for a player ID
-			System.out.println("Enter a player ID to join game with:");
-			playerId = scanner.nextLine();
-			
+	synchronized public void joinGame(String playerId) {
+		if(clientState == ClientState.UNCONNECTED) {					
 			// Send request to join game
+			this.playerId = playerId;
 			PlayerActionJoinGame actionJoinGame = new PlayerActionJoinGame(playerId);
 			gameClient.sendPlayerAction(actionJoinGame);
 			
@@ -120,6 +99,10 @@ public class TextUI implements ResultConsumer{
 	// Called by client 
 	@Override
 	synchronized public void acceptGameResult(String gameId, GameResult gameResult) {
+		System.out.println("RECEIVED A GAME RESULT!");
+		System.out.println(gameResult);
+		System.out.println("Player ID is " + playerId);
+		
 		// Filter the message
 		switch(clientState) {
 		case UNCONNECTED:
@@ -165,15 +148,17 @@ public class TextUI implements ResultConsumer{
 					// If we got a rejection after sending a join request, then it failed so try again
 					if(clientState == ClientState.JOIN_REQUEST_SENT) {
 						clientState = ClientState.UNCONNECTED;
-						joinGame();
+						gameJFrame.toggleJoinGamePanel(true);
 					}
 				}
 				break;
 			}
 			case GAME_STATE_RESULT:
 			{				
+				System.out.println("HERE");
 				// If we are getting game states then we are connected
 				if(clientState == ClientState.JOIN_REQUEST_SENT) {
+					System.out.println("AND HERE, LOOKING FOR " + playerId);
 					// Look for game state result with player's name
 					for(String pid : ((GameStateResult)gameResult).playerIds) {
 						if(playerId.equals(pid)) {
@@ -203,14 +188,106 @@ public class TextUI implements ResultConsumer{
 	
 	// Gets user input and sends player action
 	synchronized public void acceptUserInput(GameStateResult gameStateResult) {
+		// Clear all first
+		gameJFrame.disableAllMenuPanels();
+		
 		// Nothing to do if player has no actions to take
 		if(gameStateResult.validActions.isEmpty()) {
 			return;
 		}
 		
-		// Create a new scanner
-		Scanner scanner = new Scanner(System.in); 
-		
+		// Show the action panels
+		for(PlayerActionType pat : gameStateResult.validActions) {
+			switch(pat) {
+			case JOIN_GAME:
+			{
+				break;
+			}
+			case LEAVE_GAME:
+			{
+				break;
+			}
+			case CHOOSE_TOKEN:
+			{
+				List<String> tokenMenuOptions = new ArrayList<String>();
+				for(int i=0; i<TokenId.values().length; i++) {
+					if(gameStateResult.tokenAvailable[i]) {
+						TokenId ti = Token.getTokenIdByValue(i);
+						tokenMenuOptions.add(ti.getDefaultName());
+					}
+				}
+				gameJFrame.setChooseTokenComboBox(tokenMenuOptions);
+				gameJFrame.toggleChooseTokenPanel(true);
+				break;
+			}
+			case DISCARD_TOKEN:
+			{
+				gameJFrame.toggleDiscardTokenPanel(true);
+				break;
+			}
+			case VOTE_START_GAME:
+			{
+				gameJFrame.toggleStartGamePanel(true);
+				break;
+			}
+			case MOVE:
+			{
+				List<MoveDirection> moveMenuDirections = new ArrayList<MoveDirection>();
+				for(int i=0; i<MoveDirection.values().length; i++) {
+					if(gameStateResult.moveDirectionValid[i]) {
+						MoveDirection md = GameBoard.getMoveDirectionByValue(i);
+						moveMenuDirections.add(md);
+					}
+				}
+				gameJFrame.setMoveDirectionButtons(moveMenuDirections);
+				gameJFrame.toggleMovePanel(true);
+				break;
+			}
+			case MAKE_SUGGESTION:
+			{
+				printErrorMessage("Make Suggestion action is currently not supported");
+				gameJFrame.toggleSuggestPanel(true);
+				break;
+			}
+			case SHOW_CARD:
+			{
+				printErrorMessage("Show Card action is currently not supported");
+				gameJFrame.toggleShowCardPanel(true);
+				break;
+			}
+			case MAKE_ACCUSATION:
+			{
+				// First choose a room
+				List<String> roomMenuOptions = new ArrayList<String>();
+				for(RoomId ri : RoomId.values()) {
+					roomMenuOptions.add(ri.getDefaultName());
+				}
+				// Next choose a token
+				List<String> tokenMenuOptions = new ArrayList<String>();
+				for(TokenId ti : TokenId.values()) {
+					tokenMenuOptions.add(ti.getDefaultName());
+				}
+				// Finally choose a weapon
+				List<String> weaponMenuOptions = new ArrayList<String>();
+				for(WeaponId wi : WeaponId.values()) {
+					weaponMenuOptions.add(wi.getDefaultName());
+				}
+				gameJFrame.setAccusationComboBox(roomMenuOptions,tokenMenuOptions,weaponMenuOptions);
+				gameJFrame.toggleAccusePanel(true);
+				break;
+			}
+			case END_TURN:
+			{
+				gameJFrame.toggleEndTurnPanel(true);
+				break;
+			}
+			default:
+			{
+				break;
+			}
+			}
+		}
+		/*
 		// There is at least one action that the player can take, show the options
 		List<String> actionMenuOptions = new ArrayList<String>();
 		for(PlayerActionType pat : gameStateResult.validActions) {
@@ -338,49 +415,24 @@ public class TextUI implements ResultConsumer{
 		
 		// Send the selected action
 		gameClient.sendPlayerAction(actionToSend);
-	}
-		
-	// Display a numerical menu to the user and get input
-	synchronized private int getNumberMenu(Scanner scanner, String header, List<String> menuOptions) {
-		while(true) {
-			// Display header
-			System.out.println(header);
-			
-			// Display menu
-			int numOptions = menuOptions.size();
-			for(int i=1; i<=numOptions; i++) {
-				System.out.println(i + ") " + menuOptions.get(i-1));
-			}
-			System.out.println("Make a selection: ");
-			
-			// Get input
-			try {
-				// Parse the integer, a NumberFormatException will be thrown if it is not valid
-				String scannerLine = scanner.nextLine();
-				int actionSelection = Integer.parseInt(scannerLine);
-
-				// Check input validity
-				if(actionSelection < 1) {
-					// Too small
-					System.err.println("Input must be >= 1, try again...\n");
-				}else if(actionSelection > numOptions) {
-					// Too large
-					System.err.println("Input must be <= " + numOptions + ", try again...\n");
-				}else {
-					// Just right
-					return (actionSelection-1);
-				}
-
-			}catch(NumberFormatException e) {
-				// Invalid number
-				System.err.println("Input is not a valid number, try again...\n");
-			}
-		}
+		*/
 	}
 	
 	// Main
 	public static void main(String[] args) {
 		// Create a new sample client UI
-		new TextUI();
+		new GraphicalUI();
+	}
+
+	@Override
+	public void printMessage(String message) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void printErrorMessage(String message) {
+		// TODO Auto-generated method stub
+		
 	}
 }

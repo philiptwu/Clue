@@ -20,7 +20,7 @@ public class GameServer implements ResultConsumer {
 	@SuppressWarnings("resource")
 	public GameServer() {
 		// Debug output
-		System.out.println("Starting game server...");
+		printMessage("Starting game server...");
 		
 		// List of game server workers
 		gameServerWorkers = new ArrayList<GameServerWorker>();
@@ -42,20 +42,20 @@ public class GameServer implements ResultConsumer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-		System.out.println("Game server started!");
+        printMessage("Game server started!");
         
         // Infinite loop
         while (true) {
             try {
             	// Mother socket accepts inbound connection
-            	System.out.println("Waiting for client connection request...");
+            	printMessage("Waiting for client connection request...");
                 socket = serverSocket.accept();
             } catch (IOException e) {
-                System.out.println("I/O error: " + e);
+            	printErrorMessage("I/O error: " + e);
             }
             
             // Spawns off a new socket and game server worker for each client
-        	System.out.println("New client connected!");
+            printMessage("New client connected!");
             GameServerWorker gameServerWorker = new GameServerWorker(this,socket);
             Thread gameServerWorkerThread = new Thread(gameServerWorker);
             gameServerWorkerThread.start();
@@ -78,5 +78,15 @@ public class GameServer implements ResultConsumer {
 	// Main function
 	public static void main(String[] args) {
 		new GameServer();
+	}
+
+	@Override
+	public void printMessage(String message) {
+		System.out.println(message);		
+	}
+
+	@Override
+	public void printErrorMessage(String message) {
+		System.err.println(message);
 	}
 }

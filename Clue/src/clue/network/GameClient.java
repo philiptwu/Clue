@@ -14,10 +14,6 @@ import clue.result.ResultConsumer;
 
 public class GameClient implements Runnable {
 
-	// Constants
-	public static final String SERVER_ADDRESS = "localhost";
-	public static final int PORT = 2017;
-	
 	// Member variables
 	protected ResultConsumer resultConsumer;
 	protected Socket socket;
@@ -25,16 +21,16 @@ public class GameClient implements Runnable {
 	protected ObjectOutputStream ooStream;
 	
 	// Constructor
-	public GameClient(ResultConsumer resultConsumer) {
+	public GameClient(ResultConsumer resultConsumer, String ipAddress, int port) {
 		// Save a reference to the result consumer
 		this.resultConsumer = resultConsumer;
 		
 		// Try connecting
-		System.out.println("Connecting to game server...");
+		resultConsumer.printMessage("Connecting to game server...");
 		boolean connectionSuccessful = false;
 		while(!connectionSuccessful) {
 			try {
-				socket = new Socket(SERVER_ADDRESS,PORT);
+				socket = new Socket(ipAddress,port);
 				connectionSuccessful = true;
 			} catch (UnknownHostException e1) {
 				e1.printStackTrace();
@@ -48,10 +44,10 @@ public class GameClient implements Runnable {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				System.out.println("Connection not successful, trying again...");
+				resultConsumer.printMessage("Connection not successful, trying again...");
 			}
 		}
-		System.out.println("Connected to game server!");
+		resultConsumer.printMessage("Connected to game server!");
 		
 		// Get streams for writing
 		OutputStream oStream = null;
