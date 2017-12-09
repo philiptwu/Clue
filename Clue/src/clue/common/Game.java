@@ -239,25 +239,22 @@ public class Game {
 				if(turnPlayer.getPlayerName().equals(playerId)) {
 					// This is the turn player
 					if(!turnPlayerMoved) {
-						if(turnPlayer.getToken().justTeleported && !turnPlayerSuggested) {
-							// Can move if we just teleported and player has not suggested
-							validActions.add(PlayerActionType.MOVE);							
+						if(turnPlayer.getToken().justTeleported) {
+							if(!turnPlayerSuggested) {
+								// Can move if we just teleported and player has not suggested
+								validActions.add(PlayerActionType.MOVE);
+							}else {
+								// Can't move
+							}
 						}else {
 							// Can move if haven't already
 							validActions.add(PlayerActionType.MOVE);							
 						}
 					}
 					if(!turnPlayerSuggested && gameBoard.getIsTokenInRoom(turnPlayer.getToken())) {
-						// Can suggest if haven't already and we are in a room
-						if(turnPlayer.getToken().previousValid) {	
-							// We can only make a suggestion if we have moved
-							if(turnPlayer.getToken().getLocationX() != turnPlayer.getToken().getPreviousX() || 
-								turnPlayer.getToken().getLocationY() != turnPlayer.getToken().getPreviousY()) {
-								validActions.add(PlayerActionType.MAKE_SUGGESTION);								
-							}
-						}else {
-							// Previous location is not valid, we can make a suggestion
-							validActions.add(PlayerActionType.MAKE_SUGGESTION);
+						if(turnPlayer.getToken().movedSinceSuggested) {
+							// Can suggest if haven't already and we are in a room
+							validActions.add(PlayerActionType.MAKE_SUGGESTION);							
 						}
 					}
 					// Can always accuse and end turn
@@ -433,6 +430,9 @@ public class Game {
 		
 		// Move the suggested token to the suggested room
 		gameBoard.teleportToken(suggestedToken,suggestedRoom);
+		
+		// Record where token suggested
+		currPlayerToken.recordSuggestion();
 		
 		// Return player result
 		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,

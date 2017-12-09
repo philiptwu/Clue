@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import clue.common.GameEngine;
@@ -20,13 +21,14 @@ public class GameServer implements ResultConsumer {
 	@SuppressWarnings("resource")
 	public GameServer() {
 		// Debug output
-		printMessage("Starting game server...");
+		int randomSeed = (int)new Date().getTime();
+		printMessage("Starting game server with random seed " + randomSeed + "...");
 		
 		// List of game server workers
 		gameServerWorkers = new ArrayList<GameServerWorker>();
 		
 		// Create a new game engine
-		gameEngine = new GameEngine(0,"test",this);
+		gameEngine = new GameEngine(randomSeed,"test",this);
 		
 		// Start a game engine thread
 		Thread gameEngineThread = new Thread(gameEngine);

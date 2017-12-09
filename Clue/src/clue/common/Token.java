@@ -31,6 +31,7 @@ public class Token extends BoardPiece {
 	protected int previousX;
 	protected int previousY;
 	protected boolean justTeleported;
+	protected boolean movedSinceSuggested;
 	
 	// Constructor
 	public Token(TokenId tokenId) {
@@ -44,6 +45,7 @@ public class Token extends BoardPiece {
 		this.previousX = -1;
 		this.previousY = -1;
 		this.justTeleported = false;
+		this.movedSinceSuggested = true;
 	}
 	
 	// Reverse lookup token ID by value
@@ -73,6 +75,10 @@ public class Token extends BoardPiece {
 		return available;
 	}
 	
+	public void recordSuggestion() {
+		movedSinceSuggested = false;
+	}
+	
 	// Set methods
 	@Override
 	public void setLocationXY(int locationX, int locationY) {
@@ -84,6 +90,8 @@ public class Token extends BoardPiece {
 		// Set the new location
 		this.locationX = locationX;
 		this.locationY = locationY;
+
+		movedSinceSuggested = true;
 	}
 	
 	public void setTeleportedLocationXY(int locationX, int locationY) {
@@ -92,6 +100,7 @@ public class Token extends BoardPiece {
 		this.locationX = locationX;
 		this.locationY = locationY;
 		justTeleported = true;
+		movedSinceSuggested = true;
 	}
 	
 	public void clearJustTeleported() {
