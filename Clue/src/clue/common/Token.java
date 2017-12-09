@@ -30,6 +30,7 @@ public class Token extends BoardPiece {
 	protected boolean previousValid;
 	protected int previousX;
 	protected int previousY;
+	protected boolean justTeleported;
 	
 	// Constructor
 	public Token(TokenId tokenId) {
@@ -42,6 +43,7 @@ public class Token extends BoardPiece {
 		this.previousValid = false;
 		this.previousX = -1;
 		this.previousY = -1;
+		this.justTeleported = false;
 	}
 	
 	// Reverse lookup token ID by value
@@ -83,6 +85,19 @@ public class Token extends BoardPiece {
 		this.locationX = locationX;
 		this.locationY = locationY;
 	}
+	
+	public void setTeleportedLocationXY(int locationX, int locationY) {
+		// Set the new location
+		previousValid = false;
+		this.locationX = locationX;
+		this.locationY = locationY;
+		justTeleported = true;
+	}
+	
+	public void clearJustTeleported() {
+		justTeleported = false;
+	}
+	
 	public void setAvailable(boolean available) {
 		this.available = available;
 	}

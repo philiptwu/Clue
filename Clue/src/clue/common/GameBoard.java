@@ -160,6 +160,15 @@ public class GameBoard {
 		newLocation.addToken(t);
 	}
 	
+	public void teleportToken(Token t, BoardLocation newLocation) {
+		// Remove token from old location
+		BoardLocation currLocation = grid[t.getLocationX()][t.getLocationY()];
+		currLocation.removeToken(t);
+		
+		// Teleport token to new location
+		newLocation.teleportToken(t);
+	}
+	
 	// Move the weapon
 	public void moveWeapon(Weapon w, BoardLocation newLocation) {
 		// Remove token from old location

@@ -239,12 +239,26 @@ public class Game {
 				if(turnPlayer.getPlayerName().equals(playerId)) {
 					// This is the turn player
 					if(!turnPlayerMoved) {
-						// Can move if haven't already
-						validActions.add(PlayerActionType.MOVE);
+						if(turnPlayer.getToken().justTeleported && !turnPlayerSuggested) {
+							// Can move if we just teleported and player has not suggested
+							validActions.add(PlayerActionType.MOVE);							
+						}else {
+							// Can move if haven't already
+							validActions.add(PlayerActionType.MOVE);							
+						}
 					}
 					if(!turnPlayerSuggested && gameBoard.getIsTokenInRoom(turnPlayer.getToken())) {
 						// Can suggest if haven't already and we are in a room
-						validActions.add(PlayerActionType.MAKE_SUGGESTION);
+						if(turnPlayer.getToken().previousValid) {	
+							// We can only make a suggestion if we have moved
+							if(turnPlayer.getToken().getLocationX() != turnPlayer.getToken().getPreviousX() || 
+								turnPlayer.getToken().getLocationY() != turnPlayer.getToken().getPreviousY()) {
+								validActions.add(PlayerActionType.MAKE_SUGGESTION);								
+							}
+						}else {
+							// Previous location is not valid, we can make a suggestion
+							validActions.add(PlayerActionType.MAKE_SUGGESTION);
+						}
 					}
 					// Can always accuse and end turn
 					validActions.add(PlayerActionType.MAKE_ACCUSATION);
@@ -418,7 +432,7 @@ public class Game {
 		showCardPlayerIdx = (turnPlayerIdx+1) % players.size();
 		
 		// Move the suggested token to the suggested room
-		gameBoard.moveToken(suggestedToken,suggestedRoom);
+		gameBoard.teleportToken(suggestedToken,suggestedRoom);
 		
 		// Return player result
 		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
@@ -446,7 +460,7 @@ public class Game {
 		// Return player result
 		return new PlayerActionResult(GameResultCommunicationType.DIRECTED,p.getPlayerName(),
 				PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
-				playerId + " shows card " + cardId + " ( " + ct.toString() + ") to " + p.getPlayerName());
+				playerId + " shows card " + cardId + " (" + ct.toString() + ") to " + p.getPlayerName());
 	}
 	
 	// Make an accusation, wins game if correct, ends turn (and loses) if incorrect
@@ -593,6 +607,7 @@ public class Game {
 		turnPlayerMoved = false;
 		turnPlayerSuggested = false;
 		cardShowingFinished = false;
+		p.getToken().clearJustTeleported();
 		
 		// Return success
 		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,

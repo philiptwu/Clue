@@ -103,6 +103,21 @@ public abstract class BoardLocation {
 			return addSuccess;
 		}
 	}
+	public boolean teleportToken(Token boardPiece) {
+		if(isFull()) {
+			// Already full
+			System.err.println("Cannot add token to " + displayName + ", location is already full");
+			return false;
+		}else {
+			// Try adding the board piece
+			boolean addSuccess = tokens.add(boardPiece);
+			if(addSuccess) {
+				// Update the board piece's location
+				boardPiece.setTeleportedLocationXY(this.locationX,this.locationY);
+			}
+			return addSuccess;
+		}
+	}
 	public boolean addWeapon(Weapon boardPiece) {
 		boolean addSuccess = weapons.add(boardPiece);
 		if(addSuccess) {

@@ -231,8 +231,8 @@ public class GraphicalUI implements ResultConsumer{
 						moveMenuDirections.add(md);
 					}
 				}
-				gameJFrame.setMoveDirectionButtons(moveMenuDirections);
 				gameJFrame.toggleMovePanel(true);
+				gameJFrame.setMoveDirectionButtons(moveMenuDirections);
 				break;
 			}
 			case MAKE_SUGGESTION:
@@ -290,135 +290,6 @@ public class GraphicalUI implements ResultConsumer{
 			}
 			}
 		}
-		/*
-		// There is at least one action that the player can take, show the options
-		List<String> actionMenuOptions = new ArrayList<String>();
-		for(PlayerActionType pat : gameStateResult.validActions) {
-			actionMenuOptions.add(pat.toString());
-		}
-		int actionSelectionIdx = getNumberMenu(scanner,"Available Actions...",actionMenuOptions);
-		
-		// Follow up on which action was selected
-		PlayerActionType selectedActionType = gameStateResult.validActions.get(actionSelectionIdx);
-		
-		// Follow up on which action was selected
-		PlayerAction actionToSend = null;
-		switch(selectedActionType) {
-		case JOIN_GAME:
-		{
-			// Join a game (this should not be used)
-			actionToSend = new PlayerActionJoinGame(playerId);
-			break;
-		}
-		case LEAVE_GAME:
-		{
-			// Leave the current game
-			actionToSend = new PlayerActionLeaveGame(playerId);
-			break;
-		}
-		case CHOOSE_TOKEN:
-		{
-			// Choose from one of the available tokens
-			List<String> tokenMenuOptions = new ArrayList<String>();
-			for(int i=0; i<TokenId.values().length; i++) {
-				if(gameStateResult.tokenAvailable[i]) {
-					TokenId ti = Token.getTokenIdByValue(i);
-					tokenMenuOptions.add(ti.getDefaultName());
-				}
-			}
-			int tokenSelectionIdx = getNumberMenu(scanner,"Available Tokens...",tokenMenuOptions);
-			actionToSend = new PlayerActionChooseToken(playerId,tokenMenuOptions.get(tokenSelectionIdx));
-			break;
-		}
-		case DISCARD_TOKEN:
-		{
-			// Discard token
-			actionToSend = new PlayerActionDiscardToken(playerId);
-			break;
-		}
-		case VOTE_START_GAME:
-		{
-			// Vote to start the game
-			actionToSend = new PlayerActionVoteStartGame(playerId);
-			break;
-		}
-		case MOVE:
-		{
-			// Move the token
-			// First show list of valid moves
-			List<String> moveMenuOptions = new ArrayList<String>();
-			List<MoveDirection> moveMenuDirections = new ArrayList<MoveDirection>();
-			for(int i=0; i<MoveDirection.values().length; i++) {
-				if(gameStateResult.moveDirectionValid[i]) {
-					MoveDirection md = GameBoard.getMoveDirectionByValue(i);
-					moveMenuOptions.add(md.toString());
-					moveMenuDirections.add(md);
-				}
-			}
-			int moveSelectionIdx = getNumberMenu(scanner,"Available Move Directions...",moveMenuOptions);
-			MoveDirection selectedMoveDirection = moveMenuDirections.get(moveSelectionIdx);
-			
-			// Send the action
-			actionToSend = new PlayerActionMove(playerId, selectedMoveDirection);
-			break;
-		}
-		case MAKE_SUGGESTION:
-		{
-			// Make a suggestion
-			System.err.println("Make Suggestion action is currently unsupported");
-			break;
-		}
-		case SHOW_CARD:
-		{
-			// Show a card (in response to a suggestion)
-			System.err.println("Show Card action is currently unsupported");
-			break;
-		}
-		case MAKE_ACCUSATION:
-		{
-			// Make an accusation
-			// First choose a room
-			List<String> roomMenuOptions = new ArrayList<String>();
-			for(RoomId ri : RoomId.values()) {
-				roomMenuOptions.add(ri.getDefaultName());
-			}
-			int roomSelectionIdx = getNumberMenu(scanner,"Available Rooms...",roomMenuOptions);
-			// Next choose a token
-			List<String> tokenMenuOptions = new ArrayList<String>();
-			for(TokenId ti : TokenId.values()) {
-				tokenMenuOptions.add(ti.getDefaultName());
-			}
-			int tokenSelectionIdx = getNumberMenu(scanner,"Available Tokens...",tokenMenuOptions);
-			// Finally choose a weapon
-			List<String> weaponMenuOptions = new ArrayList<String>();
-			for(WeaponId wi : WeaponId.values()) {
-				weaponMenuOptions.add(wi.getDefaultName());
-			}
-			int weaponSelectionIdx = getNumberMenu(scanner,"Available Weapons...",weaponMenuOptions);
-			// Create the action
-			actionToSend = new PlayerActionMakeAccusation(playerId,
-					Room.getRoomIdByValue(roomSelectionIdx).getDefaultName(),
-					Token.getTokenIdByValue(tokenSelectionIdx).getDefaultName(),
-					Weapon.getWeaponIdByValue(weaponSelectionIdx).getDefaultName());			
-			break;
-		}
-		case END_TURN:
-		{
-			// End turn
-			actionToSend = new PlayerActionEndTurn(playerId);
-			break;
-		}
-		default:
-		{
-			// Unrecognized action type
-			System.err.println("Player selected an unsupported action type " + selectedActionType.toString());
-			return;
-		}
-		}
-		
-		// Send the selected action
-		gameClient.sendPlayerAction(actionToSend);
-		*/
 	}
 	
 	// Main
