@@ -91,18 +91,12 @@ public class GraphicalUI implements ResultConsumer{
 	
 	// Update visualization of the game state
 	synchronized public void displayGameState(GameStateResult gameStateResult) {
-		System.out.println("***********************************************");
-		System.out.println(gameStateResult);
-		System.out.println("***********************************************");
+		gameJFrame.updateBoardTextPane(gameStateResult.toString());
 	}
 
 	// Called by client 
 	@Override
 	synchronized public void acceptGameResult(String gameId, GameResult gameResult) {
-		System.out.println("RECEIVED A GAME RESULT!");
-		System.out.println(gameResult);
-		System.out.println("Player ID is " + playerId);
-		
 		// Filter the message
 		switch(clientState) {
 		case UNCONNECTED:
@@ -140,10 +134,10 @@ public class GraphicalUI implements ResultConsumer{
 				PlayerActionResult playerActionResult = (PlayerActionResult)gameResult;
 				if(playerActionResult.getPlayerActionResultType() == ActionResultType.ACTION_ACCEPTED) {
 					// Print to stdout if action was accepted
-					System.out.println(playerActionResult);
+					printMessage(playerActionResult.toString());
 				}else if(playerActionResult.getPlayerActionResultType() == ActionResultType.ACTION_REJECTED) {
 					// Print to stder if action was rejected
-					System.err.println(playerActionResult);
+					printErrorMessage(playerActionResult.toString());
 					
 					// If we got a rejection after sending a join request, then it failed so try again
 					if(clientState == ClientState.JOIN_REQUEST_SENT) {
@@ -155,10 +149,8 @@ public class GraphicalUI implements ResultConsumer{
 			}
 			case GAME_STATE_RESULT:
 			{				
-				System.out.println("HERE");
 				// If we are getting game states then we are connected
 				if(clientState == ClientState.JOIN_REQUEST_SENT) {
-					System.out.println("AND HERE, LOOKING FOR " + playerId);
 					// Look for game state result with player's name
 					for(String pid : ((GameStateResult)gameResult).playerIds) {
 						if(playerId.equals(pid)) {
@@ -245,13 +237,24 @@ public class GraphicalUI implements ResultConsumer{
 			}
 			case MAKE_SUGGESTION:
 			{
-				printErrorMessage("Make Suggestion action is currently not supported");
-				gameJFrame.toggleSuggestPanel(true);
+				// First choose a token
+				List<String> tokenMenuOptions = new ArrayList<String>();
+				for(TokenId ti : TokenId.values()) {
+					tokenMenuOptions.add(ti.getDefaultName());
+				}
+				// Finally choose a weapon
+				List<String> weaponMenuOptions = new ArrayList<String>();
+				for(WeaponId wi : WeaponId.values()) {
+					weaponMenuOptions.add(wi.getDefaultName());
+				}
+				gameJFrame.setSuggestionComboBox(tokenMenuOptions,weaponMenuOptions);
+				gameJFrame.toggleSuggestPanel(true);				
 				break;
 			}
 			case SHOW_CARD:
 			{
-				printErrorMessage("Show Card action is currently not supported");
+				// List the available cards
+				gameJFrame.setShowableCards(gameStateResult.playerShowableCardTypes,gameStateResult.playerShowableCardIds);
 				gameJFrame.toggleShowCardPanel(true);
 				break;
 			}
@@ -426,13 +429,11 @@ public class GraphicalUI implements ResultConsumer{
 
 	@Override
 	public void printMessage(String message) {
-		// TODO Auto-generated method stub
-		
+		gameJFrame.printMessage(message);
 	}
 
 	@Override
 	public void printErrorMessage(String message) {
-		// TODO Auto-generated method stub
-		
+		gameJFrame.printErrorMessage(message);
 	}
 }

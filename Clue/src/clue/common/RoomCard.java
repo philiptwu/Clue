@@ -20,7 +20,7 @@ public class RoomCard extends Card {
 	}
 	
 	public String toString() {
-		return cardType.toString() + " " + roomId.getDefaultName();
+		return roomId.getDefaultName() + " (" + cardType.toString() + ")";
 	}
 	
 	public static List<RoomCard> getCards(){

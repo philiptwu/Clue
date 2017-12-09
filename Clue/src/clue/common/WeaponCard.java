@@ -20,7 +20,7 @@ public class WeaponCard extends Card {
 	}
 	
 	public String toString() {
-		return cardType.toString() + " " + weaponId.getDefaultName();
+		return weaponId.getDefaultName() + " (" + cardType.toString() + ")";
 	}
 	
 	public static List<WeaponCard> getCards(){

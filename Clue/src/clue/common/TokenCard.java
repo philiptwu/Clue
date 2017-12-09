@@ -20,7 +20,7 @@ public class TokenCard extends Card {
 	}
 	
 	public String toString() {
-		return cardType.toString() + " " + tokenId.getDefaultName();
+		return tokenId.getDefaultName() + " (" + cardType.toString() + ")";
 	}
 	
 	public static List<TokenCard> getCards(){

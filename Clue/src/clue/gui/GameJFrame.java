@@ -12,13 +12,31 @@ import clue.action.PlayerActionEndTurn;
 import clue.action.PlayerActionMakeAccusation;
 import clue.action.PlayerActionMakeSuggestion;
 import clue.action.PlayerActionMove;
+import clue.action.PlayerActionShowCard;
 import clue.action.PlayerActionVoteStartGame;
+import clue.common.Card;
+import clue.common.Card.CardType;
 import clue.common.GameBoard.MoveDirection;
+import clue.common.Room;
+import clue.common.Room.RoomId;
+import clue.common.RoomCard;
+import clue.common.Token;
+import clue.common.Weapon;
+import clue.common.Token.TokenId;
+import clue.common.Weapon.WeaponId;
 import clue.ui.GraphicalUI;
 
+import java.awt.Color;
 import java.util.List;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
+import javax.swing.JTextPane;
+import javax.swing.ListModel;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 
 /**
  *
@@ -194,6 +212,17 @@ public class GameJFrame extends javax.swing.JFrame {
     	}
     }
     
+    public synchronized void setSuggestionComboBox(List<String> tokens, List<String> weapons) {
+    	suggestTokenComboBox.removeAllItems();
+    	for(String t : tokens) {
+    		suggestTokenComboBox.addItem(t);
+    	}
+    	suggestWeaponComboBox.removeAllItems();
+    	for(String w : weapons) {
+    		suggestWeaponComboBox.addItem(w);
+    	}
+    }
+    
     public synchronized void setAccusationComboBox(List<String> rooms, List<String> tokens, List<String> weapons) {
     	accuseRoomComboBox.removeAllItems();
     	for(String r : rooms) {
@@ -206,6 +235,55 @@ public class GameJFrame extends javax.swing.JFrame {
     	for(String w : weapons) {
     		accuseWeaponComboBox.addItem(w);
     	}
+    }
+    
+    public synchronized void setShowableCards(List<Integer> cardTypes, List<Integer> cardIds) {
+    	cardComboBox.removeAllItems();
+    	for(int i=0; i<cardTypes.size(); i++) {
+    		CardType cardType = Card.getCardTypeByValue(cardTypes.get(i));
+    		String displayString = null;
+    		if(cardType == CardType.ROOM) {
+    			RoomId roomId = Room.getRoomIdByValue(cardIds.get(i));
+    			displayString = roomId.getDefaultName() + " (" + cardType.toString() + ")";
+    		}else if(cardType == CardType.TOKEN) {
+    			TokenId tokenId = Token.getTokenIdByValue(cardIds.get(i));
+    			displayString = tokenId.getDefaultName() + " (" + cardType.toString() + ")";
+    		}else {
+    			WeaponId weaponId = Weapon.getWeaponIdByValue(cardIds.get(i));
+    			displayString = weaponId.getDefaultName() + " (" + cardType.toString() + ")";    			
+    		}
+    		cardComboBox.addItem(displayString);
+    	}
+	}
+    
+    public synchronized void printMessage(String message) {
+    	appendToPane(messageHistoryTextPane,message+"\n",Color.BLACK);
+    	messageHistoryTextPane.repaint();
+    }
+    
+    public synchronized void printErrorMessage(String message) {
+    	appendToPane(messageHistoryTextPane,message+"\n",Color.RED);
+    	messageHistoryTextPane.repaint();
+    }
+    
+    public synchronized void updateBoardTextPane(String message) {
+    	boardTextPane.setText("");
+    	appendToPane(boardTextPane,message,Color.BLUE);
+    	boardTextPane.repaint();
+    }
+    
+    private void appendToPane(JTextPane tp, String msg, Color c)
+    {
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, c);
+
+        aset = sc.addAttribute(aset, StyleConstants.FontFamily, "Lucida Console");
+        aset = sc.addAttribute(aset, StyleConstants.Alignment, StyleConstants.ALIGN_JUSTIFIED);
+
+        int len = tp.getDocument().getLength();
+        tp.setCaretPosition(len);
+        tp.setCharacterAttributes(aset, false);
+        tp.replaceSelection(msg);
     }
     
     /**
@@ -263,12 +341,12 @@ public class GameJFrame extends javax.swing.JFrame {
         startGamePanel = new javax.swing.JPanel();
         startGameButton = new javax.swing.JButton();
         informationPanel = new javax.swing.JPanel();
-        gamePanel = new javax.swing.JPanel();
-        playerPanel = new javax.swing.JPanel();
         messageHistoryPanel = new javax.swing.JPanel();
         messageHistoryScrollPane = new javax.swing.JScrollPane();
-        messageHistoryList = new javax.swing.JList<>();
+        messageHistoryTextPane = new javax.swing.JTextPane();
         boardPanel = new javax.swing.JPanel();
+        boardScrollPane = new javax.swing.JScrollPane();
+        boardTextPane = new javax.swing.JTextPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -715,51 +793,19 @@ public class GameJFrame extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        gamePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Game"));
-
-        javax.swing.GroupLayout gamePanelLayout = new javax.swing.GroupLayout(gamePanel);
-        gamePanel.setLayout(gamePanelLayout);
-        gamePanelLayout.setHorizontalGroup(
-            gamePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 325, Short.MAX_VALUE)
-        );
-        gamePanelLayout.setVerticalGroup(
-            gamePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 71, Short.MAX_VALUE)
-        );
-
-        playerPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Player"));
-
-        javax.swing.GroupLayout playerPanelLayout = new javax.swing.GroupLayout(playerPanel);
-        playerPanel.setLayout(playerPanelLayout);
-        playerPanelLayout.setHorizontalGroup(
-            playerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 319, Short.MAX_VALUE)
-        );
-        playerPanelLayout.setVerticalGroup(
-            playerPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 71, Short.MAX_VALUE)
-        );
-
         messageHistoryPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Message History"));
 
-        messageHistoryList.setToolTipText("");
-        messageHistoryScrollPane.setViewportView(messageHistoryList);
+        messageHistoryScrollPane.setViewportView(messageHistoryTextPane);
 
         javax.swing.GroupLayout messageHistoryPanelLayout = new javax.swing.GroupLayout(messageHistoryPanel);
         messageHistoryPanel.setLayout(messageHistoryPanelLayout);
         messageHistoryPanelLayout.setHorizontalGroup(
             messageHistoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, messageHistoryPanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(messageHistoryScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 673, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(72, 72, 72))
+            .addComponent(messageHistoryScrollPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 667, Short.MAX_VALUE)
         );
         messageHistoryPanelLayout.setVerticalGroup(
             messageHistoryPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(messageHistoryPanelLayout.createSequentialGroup()
-                .addComponent(messageHistoryScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 3, Short.MAX_VALUE))
+            .addComponent(messageHistoryScrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 287, Short.MAX_VALUE)
         );
 
         javax.swing.GroupLayout informationPanelLayout = new javax.swing.GroupLayout(informationPanel);
@@ -767,36 +813,33 @@ public class GameJFrame extends javax.swing.JFrame {
         informationPanelLayout.setHorizontalGroup(
             informationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, informationPanelLayout.createSequentialGroup()
-                .addGroup(informationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(messageHistoryPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(informationPanelLayout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(gamePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(playerPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addComponent(messageHistoryPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
         informationPanelLayout.setVerticalGroup(
             informationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(informationPanelLayout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, informationPanelLayout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(informationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(gamePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(playerPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(messageHistoryPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(messageHistoryPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
+
+        boardScrollPane.setViewportView(boardTextPane);
 
         javax.swing.GroupLayout boardPanelLayout = new javax.swing.GroupLayout(boardPanel);
         boardPanel.setLayout(boardPanelLayout);
         boardPanelLayout.setHorizontalGroup(
             boardPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 692, Short.MAX_VALUE)
+            .addGroup(boardPanelLayout.createSequentialGroup()
+                .addComponent(boardScrollPane)
+                .addContainerGap())
         );
         boardPanelLayout.setVerticalGroup(
             boardPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 557, Short.MAX_VALUE)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, boardPanelLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(boardScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 506, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(3, 3, 3))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -809,7 +852,7 @@ public class GameJFrame extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 3, Short.MAX_VALUE)
-                        .addComponent(informationPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 689, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(informationPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(boardPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -817,11 +860,11 @@ public class GameJFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(menuPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(menuPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(boardPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(informationPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(informationPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -972,7 +1015,35 @@ public class GameJFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_endTurnButtonActionPerformed
 
     private void showCardButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showCardButtonActionPerformed
-        //TODO Need to implement show card
+    	List<Integer> cardTypes = graphicalUI.gameStateResult.playerShowableCardTypes;
+    	List<Integer> cardIds = graphicalUI.gameStateResult.playerShowableCardIds;
+
+    	int selectedIdx = cardComboBox.getSelectedIndex();
+    	if(selectedIdx < 0 || selectedIdx >= cardTypes.size()) {
+            JOptionPane.showMessageDialog(null, "Invalid card selection", "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        	return;  
+    	}
+    	
+    	CardType cardType = Card.getCardTypeByValue(cardTypes.get(selectedIdx));
+    	String cardIdString = null;
+		if(cardType == CardType.ROOM) {
+			RoomId roomId = Room.getRoomIdByValue(cardIds.get(selectedIdx));
+			cardIdString = roomId.getDefaultName();
+		}else if(cardType == CardType.TOKEN) {
+			TokenId tokenId = Token.getTokenIdByValue(cardIds.get(selectedIdx));
+			cardIdString = tokenId.getDefaultName();
+		}else {
+			WeaponId weaponId = Weapon.getWeaponIdByValue(cardIds.get(selectedIdx));
+			cardIdString = weaponId.getDefaultName();
+		}
+    	
+    	PlayerAction pa = new PlayerActionShowCard(
+    			graphicalUI.getPlayerId(),
+    			cardType.toString(),
+    			cardIdString
+    			);
+    	graphicalUI.gameClient.sendPlayerAction(pa);
     }//GEN-LAST:event_showCardButtonActionPerformed
 
     /**
@@ -1020,6 +1091,8 @@ public class GameJFrame extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> accuseWeaponComboBox;
     private javax.swing.JLabel accuseWeaponLabel;
     private javax.swing.JPanel boardPanel;
+    private javax.swing.JScrollPane boardScrollPane;
+    private javax.swing.JTextPane boardTextPane;
     private javax.swing.JComboBox<String> cardComboBox;
     private javax.swing.JLabel cardLabel;
     private javax.swing.JButton chooseTokenButton;
@@ -1033,21 +1106,19 @@ public class GameJFrame extends javax.swing.JFrame {
     private javax.swing.JButton eastButton;
     private javax.swing.JButton endTurnButton;
     private javax.swing.JPanel endTurnPanel;
-    private javax.swing.JPanel gamePanel;
     private javax.swing.JPanel informationPanel;
     private javax.swing.JLabel ipAddressLabel;
     private javax.swing.JTextField ipAddressTextField;
     private javax.swing.JButton joinGameButton;
     private javax.swing.JPanel joinGamePanel;
     private javax.swing.JPanel menuPanel;
-    private javax.swing.JList<String> messageHistoryList;
     private javax.swing.JPanel messageHistoryPanel;
     private javax.swing.JScrollPane messageHistoryScrollPane;
+    private javax.swing.JTextPane messageHistoryTextPane;
     private javax.swing.JPanel movePanel;
     private javax.swing.JButton northButton;
     private javax.swing.JLabel playerIdLabel;
     private javax.swing.JTextField playerIdTextField;
-    private javax.swing.JPanel playerPanel;
     private javax.swing.JLabel portLabel;
     private javax.swing.JTextField portTextField;
     private javax.swing.JButton secretButton;

@@ -116,6 +116,10 @@ public class GameBoard {
 		return new ArrayList<Weapon>(weaponMap.values());
 	}
 	
+	public BoardLocation getBoardLocation(int x, int y) {
+		return grid[x][y];
+	}
+	
 	// Method to initialize default token locations
 	public void initializeDefaultTokenLocations() {
 		// Add tokens to board

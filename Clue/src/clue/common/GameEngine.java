@@ -1,5 +1,6 @@
 package clue.common;
 
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -11,7 +12,9 @@ import clue.action.PlayerActionEndTurn;
 import clue.action.PlayerActionJoinGame;
 import clue.action.PlayerActionLeaveGame;
 import clue.action.PlayerActionMakeAccusation;
+import clue.action.PlayerActionMakeSuggestion;
 import clue.action.PlayerActionMove;
+import clue.action.PlayerActionShowCard;
 import clue.common.Game.GameStatus;
 import clue.result.PlayerActionResult;
 import clue.result.ResultConsumer;
@@ -44,6 +47,55 @@ public class GameEngine implements Runnable {
 		// Infinite loop
 		PlayerAction currPlayerAction = null;
 		while(true) {
+			// If showing cards, skip players who do not need to show cards
+			if(game.turnPlayerSuggested && !game.cardShowingFinished) {
+				while(true) {
+					if(game.showCardPlayerIdx == game.turnPlayerIdx) {
+						// Went all the way around, nothing to be shown
+						PlayerActionResult nothingResult = new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+								PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+							"No cards were shown by any players in response to the suggestion");
+						
+						// We are done showing cards
+						game.cardShowingFinished = true;
+						
+						// Handle the action result
+						gameResultConsumer.acceptGameResult(game.getGameId(), nothingResult);
+						
+						// Send the updated game state to each player
+						for(Player p : game.players) {
+							gameResultConsumer.acceptGameResult(game.getGameId(), new GameStateResult(p.getPlayerName(),game));
+						}
+						break;
+					}
+					
+					// If we got here then we haven't gone all the way around yet
+					List<Card> showableCards = game.evaluateCardShowCandidate();
+					if(showableCards.isEmpty()) {
+						// Nothing to show
+						PlayerActionResult skipResult = new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+								PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+							"Player " + game.players.get(game.showCardPlayerIdx).getPlayerName() + 
+							" did not show any cards in response to the suggestion");
+
+						// Handle the action result
+						gameResultConsumer.acceptGameResult(game.getGameId(), skipResult);
+						
+						// Try the next player
+						game.showCardPlayerIdx = (game.showCardPlayerIdx + 1) % game.players.size();
+					}else {
+						// Something to show
+						game.showableCards = showableCards;
+						
+						// Send the updated game state to each player
+						for(Player p : game.players) {
+							gameResultConsumer.acceptGameResult(game.getGameId(), new GameStateResult(p.getPlayerName(),game));
+						}
+						break;
+					}
+				}
+			}
+			
 			// Wait for a new player action to process
 			while(true){
 				currPlayerAction = playerActionQueue.poll();
@@ -141,17 +193,15 @@ public class GameEngine implements Runnable {
 		case MAKE_SUGGESTION:
 		{
 			// Suggest a solution
-			actionResult = new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerAction.getPlayerId(),
-					ActionResultType.ACTION_REJECTED,
-					"Make suggestion player action not yet implemented");
+			PlayerActionMakeSuggestion a = (PlayerActionMakeSuggestion)playerAction;
+			actionResult = game.suggest(a.getPlayerId(), a.getTokenId(), a.getWeaponId());
 			break;
 		}
 		case SHOW_CARD:
 		{
 			// Show card
-			actionResult = new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerAction.getPlayerId(),
-					ActionResultType.ACTION_REJECTED,
-					"Show card player action not yet implemented");
+			PlayerActionShowCard a = (PlayerActionShowCard)playerAction;
+			actionResult = game.showCard(a.getPlayerId(), a.getCardType(), a.getCardId());
 			break;
 		}
 		case MAKE_ACCUSATION:

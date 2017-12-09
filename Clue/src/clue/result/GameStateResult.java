@@ -29,6 +29,7 @@ public class GameStateResult extends GameResult {
 	public int turnPlayerIdx;
 	public boolean turnPlayerMoved;
 	public boolean turnPlayerSuggested;
+	public boolean cardShowingFinished;
 	public int winnerIdx;
 	public GameStatus gameStatus;
 	public int[] weaponLocationX;
@@ -46,6 +47,8 @@ public class GameStateResult extends GameResult {
 	public List<Integer> playerCardIds;
 	public List<PlayerActionType> validActions;
 	public boolean[] moveDirectionValid;
+	public List<Integer> playerShowableCardTypes;
+	public List<Integer> playerShowableCardIds;
 	
 	// Constructor
 	public GameStateResult(String playerId, Game game) {
@@ -62,6 +65,7 @@ public class GameStateResult extends GameResult {
 		this.turnPlayerIdx = game.turnPlayerIdx;
 		this.turnPlayerMoved = game.turnPlayerMoved;
 		this.turnPlayerSuggested = game.turnPlayerSuggested;
+		this.cardShowingFinished = game.cardShowingFinished;
 		this.winnerIdx = game.winnerIdx;
 		this.gameStatus = game.gameStatus;
 		
@@ -130,6 +134,21 @@ public class GameStateResult extends GameResult {
 		for(MoveDirection md : game.getValidMoveDirections(playerId)) {
 			int moveDirectionIdx = md.getValue();
 			moveDirectionValid[moveDirectionIdx] = true;
+		}
+		
+		// Showable cards
+		playerShowableCardTypes = new ArrayList<Integer>();
+		playerShowableCardIds = new ArrayList<Integer>();
+		for(Card c : game.showableCards) {
+			CardType ct = c.getCardType();
+			playerShowableCardTypes.add(ct.getValue());
+			if(ct == CardType.ROOM) {
+				playerShowableCardIds.add(((RoomCard)c).getRoomId().getValue());
+			}else if(ct == CardType.TOKEN) {
+				playerShowableCardIds.add(((TokenCard)c).getTokenId().getValue());			
+			}else if(ct == CardType.WEAPON) {
+				playerShowableCardIds.add(((WeaponCard)c).getWeaponId().getValue());							
+			}
 		}
 	}
 	

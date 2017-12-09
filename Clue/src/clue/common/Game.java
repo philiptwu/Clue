@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Random;
 
 import clue.action.PlayerAction.PlayerActionType;
+import clue.common.BoardLocation.LocationType;
+import clue.common.Card.CardType;
 import clue.common.GameBoard.MoveDirection;
 import clue.result.PlayerActionResult;
 import clue.result.GameResult.GameResultCommunicationType;
@@ -44,13 +46,17 @@ public class Game {
 	protected List<WeaponCard> weaponCards;
 	public List<Player> players;
 	protected GameSolution gameSolution;
+	protected GameSolution currSuggestion;
 	public GameStatus gameStatus;
 	public int turnPlayerIdx;
+	public int showCardPlayerIdx;
 	public boolean turnPlayerMoved;
 	public boolean turnPlayerSuggested;
+	public boolean cardShowingFinished;
 	public int winnerIdx;
 	public String gameId;
 	protected Random random;
+	public List<Card> showableCards;
 	
 	// Constructor
 	public Game(int randomSeed, String gameId) {
@@ -70,6 +76,9 @@ public class Game {
 		roomCards = RoomCard.getCards();
 		tokenCards = TokenCard.getCards();
 		weaponCards = WeaponCard.getCards();
+		
+		// Initialize
+		showableCards = new ArrayList<Card>();
 		
 		// Initialize empty list of players
 		players = new ArrayList<Player>();
@@ -217,20 +226,30 @@ public class Game {
 					validActions.add(PlayerActionType.LEAVE_GAME);
 				}
 		}else if(gameStatus == GameStatus.PLAYING) {
-			Player turnPlayer = players.get(turnPlayerIdx);
-			if(turnPlayer.getPlayerName().equals(playerId)) {
-				// This is the turn player
-				if(!turnPlayerMoved) {
-					// Can move if haven't already
-					validActions.add(PlayerActionType.MOVE);
+			if(turnPlayerSuggested && !cardShowingFinished) {
+				// Card showing gameplay mode
+				Player showCardPlayer = players.get(showCardPlayerIdx);
+				if(showCardPlayer.getPlayerName().equals(playerId)) {
+					// Player must show card
+					validActions.add(PlayerActionType.SHOW_CARD);
 				}
-				if(!turnPlayerSuggested && gameBoard.getIsTokenInRoom(turnPlayer.getToken())) {
-					// Can suggest if haven't already and we are in a room
-					validActions.add(PlayerActionType.MAKE_SUGGESTION);
+			}else {
+				// Normal gameplay mode
+				Player turnPlayer = players.get(turnPlayerIdx);
+				if(turnPlayer.getPlayerName().equals(playerId)) {
+					// This is the turn player
+					if(!turnPlayerMoved) {
+						// Can move if haven't already
+						validActions.add(PlayerActionType.MOVE);
+					}
+					if(!turnPlayerSuggested && gameBoard.getIsTokenInRoom(turnPlayer.getToken())) {
+						// Can suggest if haven't already and we are in a room
+						validActions.add(PlayerActionType.MAKE_SUGGESTION);
+					}
+					// Can always accuse and end turn
+					validActions.add(PlayerActionType.MAKE_ACCUSATION);
+					validActions.add(PlayerActionType.END_TURN);
 				}
-				// Can always accuse and end turn
-				validActions.add(PlayerActionType.MAKE_ACCUSATION);
-				validActions.add(PlayerActionType.END_TURN);
 			}
 		}else if(gameStatus == GameStatus.FINISHED) {
 			// Do nothing
@@ -258,6 +277,36 @@ public class Game {
 			// Otherwise player cannot move
 			return new ArrayList<MoveDirection>();
 		}
+	}
+	
+	// Called by engine to skip over players who dont have the right cards
+	public List<Card> evaluateCardShowCandidate() {
+		// Determine if player actually has any of the cards of interest
+		Player showCardPlayer = players.get(showCardPlayerIdx);
+		List<Card> playerCards = showCardPlayer.getCards();
+		List<Card> showableCards = new ArrayList<Card>();
+				
+		// See if they have the cards of interest
+		for(Card c : playerCards) {
+			if(c.getCardType() == CardType.ROOM) {
+				RoomCard rc = (RoomCard)c;
+				if(rc.getRoomId() == currSuggestion.getRoomId()) {
+					showableCards.add(rc);
+				}
+			}else if(c.getCardType() == CardType.TOKEN) {
+				TokenCard tc = (TokenCard)c;
+				if(tc.getTokenId() == currSuggestion.getTokenId()) {
+					showableCards.add(tc);
+				}
+			}else if(c.getCardType() == CardType.WEAPON) {
+				WeaponCard wc = (WeaponCard)c;
+				if(wc.getWeaponId() == currSuggestion.getWeaponId()) {
+					showableCards.add(wc);
+				}
+			}
+		}
+		
+		return showableCards;
 	}
 	
 	// Move the token to one of the valid move directions
@@ -300,7 +349,7 @@ public class Game {
 	}
 	
 	// Make a suggestion
-	public PlayerActionResult suggest(String playerId, String roomId, String tokenId, String weaponId) {
+	public PlayerActionResult suggest(String playerId, String tokenId, String weaponId) {
 		// Determine if we can take this action
 		if(gameStatus != GameStatus.PLAYING ) {
 			// Cannot suggest if game is not playing
@@ -317,20 +366,17 @@ public class Game {
 					PlayerActionResult.ActionResultType.ACTION_REJECTED,
 					"Cannot make a suggestion when it is not your turn");
 		}
-		
-		// Get the room
-		List<Room> rooms = gameBoard.getRooms();
-		Room suggestedRoom = null;
-		for(Room r : rooms) {
-			if(r.getDisplayName().equals(roomId)) {
-				suggestedRoom = r;
-			}
-		}
-		if(suggestedRoom == null) {
+				
+		// Get the room (player's current room)
+		Token currPlayerToken = currPlayer.getToken();
+		BoardLocation currPlayerLocation = gameBoard.getBoardLocation(currPlayerToken.getLocationX(), currPlayerToken.getLocationY());
+		if(currPlayerLocation.getLocationType() != LocationType.ROOM) {
+			// Cannot accuse when it is not your turn
 			return new PlayerActionResult(GameResultCommunicationType.DIRECTED,playerId,
 					PlayerActionResult.ActionResultType.ACTION_REJECTED,
-					"Cannot make a suggestion with room " + roomId + " because it does not exist in the game");
+					"Cannot make a suggestion when token is not in a room");
 		}
+		Room suggestedRoom = (Room)currPlayerLocation;
 		
 		// Get the token
 		List<Token> tokens = gameBoard.getTokens();
@@ -363,12 +409,44 @@ public class Game {
 		// Create the game solution
 		GameSolution suggestion = new GameSolution(suggestedRoom.getRoomId(), suggestedToken.getTokenId(), suggestedWeapon.getWeaponId());
 		
-		//TODO: CONTINUE WRITING CODE HERE
-		return null;
+		// Save the suggestion
+		currSuggestion = suggestion;
+		
+		// Start the process of showing cards
+		turnPlayerSuggested = true;
+		cardShowingFinished = false;
+		showCardPlayerIdx = (turnPlayerIdx+1) % players.size();
+		
+		// Move the suggested token to the suggested room
+		gameBoard.moveToken(suggestedToken,suggestedRoom);
+		
+		// Return player result
+		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
+				PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+				playerId + " suggests " + suggestion);
 	}
 	
-	public void showCard() {
+	// Show the card
+	public PlayerActionResult showCard(String playerId, String cardType, String cardId) {
+		CardType ct = null;
+		if(cardType.equals(CardType.ROOM.toString())) {
+			ct = CardType.ROOM;
+		}else if(cardType.equals(CardType.TOKEN.toString())) {
+			ct = CardType.TOKEN;
+		}else {
+			ct = CardType.WEAPON;
+		}
+
+		// Figure out who to show the card to
+		Player p = players.get(turnPlayerIdx);
+
+		// We are done showing cards, can continue on with regular game
+		cardShowingFinished = true;
 		
+		// Return player result
+		return new PlayerActionResult(GameResultCommunicationType.DIRECTED,p.getPlayerName(),
+				PlayerActionResult.ActionResultType.ACTION_ACCEPTED,
+				playerId + " shows card " + cardId + " ( " + ct.toString() + ") to " + p.getPlayerName());
 	}
 	
 	// Make an accusation, wins game if correct, ends turn (and loses) if incorrect
@@ -514,6 +592,7 @@ public class Game {
 		// Reset bookkeeping flags for this turn
 		turnPlayerMoved = false;
 		turnPlayerSuggested = false;
+		cardShowingFinished = false;
 		
 		// Return success
 		return new PlayerActionResult(GameResultCommunicationType.BROADCAST,null,
